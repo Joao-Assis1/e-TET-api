@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: e-tet-api
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: postgresql://neondb_owner:npg_07cTmAHdBnYq@ep-gentle-wildflower-anemu70d-pooler.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 3000
