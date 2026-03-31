@@ -67,3 +67,10 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 *.sqlite-journal
 *.sqlite-wal
 database.sqlite
+src/feats/visits/visits.controller.spec.ts
+src/feats/visits/visits.service.spec.ts
+test/cadastro-sincronizacao.e2e-spec.ts
+test/coelho-savassi.e2e-spec.ts
+test/e-sus-full-flow.e2e-spec.ts
+force-sync.ts
+seed.js
