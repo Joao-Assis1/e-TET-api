@@ -34,7 +34,7 @@ import { JwtModule } from '@nestjs/jwt';
             type: 'postgres',
             url: configService.get('DATABASE_URL'),
             entities: [User, Family, Individual, Household, Visit],
-            synchronize: false,
+            synchronize: true,
             ssl: {
               rejectUnauthorized: false,
             },
