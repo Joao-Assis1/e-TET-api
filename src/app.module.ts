@@ -10,6 +10,7 @@ import { FamiliesModule } from './feats/families/families.module';
 import { Family } from './feats/families/family.entity';
 import { IndividualsModule } from './feats/individuals/individuals.module';
 import { Individual } from './feats/individuals/individual.entity';
+import { IndividualHealth } from './feats/individuals/individual-health.entity';
 import { SyncModule } from './feats/sync/sync.module';
 import { HouseholdsModule } from './feats/households/households.module';
 import { Household } from './feats/households/household.entity';
@@ -33,7 +34,7 @@ import { JwtModule } from '@nestjs/jwt';
           return {
             type: 'postgres',
             url: configService.get('DATABASE_URL'),
-            entities: [User, Family, Individual, Household, Visit],
+            entities: [User, Family, Individual, IndividualHealth, Household, Visit],
             synchronize: true,
             ssl: {
               rejectUnauthorized: false,
@@ -44,7 +45,7 @@ import { JwtModule } from '@nestjs/jwt';
         return {
           type: 'sqlite',
           database: 'database.sqlite',
-          entities: [User, Family, Individual, Household, Visit],
+          entities: [User, Family, Individual, IndividualHealth, Household, Visit],
           synchronize: true,
         };
       },

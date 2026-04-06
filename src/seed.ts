@@ -16,8 +16,8 @@ async function seed() {
       usuario: adminUsername,
       senha: 'admin123',
       role: UserRole.ADMIN,
-      cns: '000000000000000',
-      cne: '0000000',
+      cns_profissional: '000000000000000',
+      cnes_estabelecimento: '0000000',
     });
     console.log('✅ Usuário ADMIN criado: admin / admin123');
   }
@@ -31,8 +31,8 @@ async function seed() {
       usuario: acsUsername,
       senha: 'acs123',
       role: UserRole.PROFISSIONAL,
-      cns: '209384756100005', // CNS Fictício Válido (Formato)
-      cne: '7654321', // CNE da Unidade de Saúde
+      cns_profissional: '209384756100005', // CNS Fictício Válido (Formato)
+      cnes_estabelecimento: '7654321', // CNE da Unidade de Saúde
     });
     console.log(
       '✅ Usuário ACS criado: acs_jose / acs123 (CNS: 209384756100005)',
