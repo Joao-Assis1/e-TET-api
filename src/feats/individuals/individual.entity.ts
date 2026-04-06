@@ -6,21 +6,29 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
+  OneToOne,
   JoinColumn,
 } from 'typeorm';
+import { IndividualHealth } from './individual-health.entity';
 import {
   IsString,
   IsBoolean,
-  IsDateString,
   IsOptional,
   IsEnum,
   IsEmail,
   IsArray,
   ValidateIf,
   IsUUID,
+  Min,
+  IsInt,
+  IsNotEmpty,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/mapped-types';
 import { Family } from '../families/family.entity';
+
+// --- ENUMS CDS ---
 
 export enum Sexo {
   MASCULINO = 'Masculino',
@@ -41,11 +49,85 @@ export enum Nacionalidade {
   ESTRANGEIRO = 'Estrangeiro',
 }
 
+export enum EducationLevel {
+  CRECHE = 'Creche',
+  PRE_ESCOLA = 'Pré-escola',
+  EF1_A_4 = 'Ensino Fundamental 1ª a 4ª séries',
+  EF5_A_8 = 'Ensino Fundamental 5ª a 8ª séries',
+  EF_COMPLETO = 'Ensino Fundamental Completo',
+  EM_INCOMPLETO = 'Ensino Médio Incompleto',
+  EM_COMPLETO = 'Ensino Médio Completo',
+  SUP_INCOMPLETO = 'Ensino Superior Incompleto',
+  SUP_COMPLETO = 'Ensino Superior Completo',
+  EJA_FUNDAMENTAL = 'EJA - Fundamental',
+  EJA_MEDIO = 'EJA - Médio',
+  ALFABETIZACAO = 'Alfabetização para Adultos',
+  NENHUM = 'Nenhum',
+}
+
+export enum JobStatus {
+  EMPREGADO_COM_CARTEIRA = 'Asalariado com carteira assinada',
+  EMPREGADO_SEM_CARTEIRA = 'Asalariado sem carteira assinada',
+  AUTONOMO_COM_PREV = 'Autônomo com contribuição previdenciária',
+  AUTONOMO_SEM_PREV = 'Autônomo sem contribuição previdenciária',
+  APOSENTADO = 'Aposentado/Pensionista',
+  DESEMPREGADO = 'Desempregado',
+  INFORMAL = 'Trabalho Informal',
+  OUTRO = 'Outro',
+}
+
+export enum Kinship {
+  CONJUGE = 'Cônjuge / Companheiro(a)',
+  FILHO = 'Filho(a)',
+  ENTEADO = 'Enteado(a)',
+  PAI_MAE = 'Pai / Mãe',
+  AGREGADO = 'Agregado(a)',
+  IRMAO = 'Irmão / Irmã',
+  OUTRO = 'Outro',
+}
+
+export enum DisabilityType {
+  AUDITIVA = 'Auditiva',
+  VISUAL = 'Visual',
+  INTELECTUAL = 'Intelectual/Cognitiva',
+  FISICA = 'Física',
+  OUTRA = 'Outra',
+}
+
+export enum SexualOrientation {
+  HETERO = 'Heterossexual',
+  HOMO = 'Homossexual (Gay / Lésbica)',
+  BI = 'Bissexual',
+  OUTRO = 'Outro',
+}
+
+export enum GenderIdentity {
+  TRAVESTI = 'Travesti',
+  TRANSEX_M = 'Transexual Masculino',
+  TRANSEX_F = 'Transexual Feminino',
+  OUTRO = 'Outro',
+}
+
+export enum StreetTime {
+  MENOS_6_MESES = 'Menos de 6 meses',
+  DE_6_12_MESES = 'De 6 a 12 meses',
+  DE_1_5_ANOS = 'De 1 a 5 anos',
+  MAIS_5_ANOS = 'Mais de 5 anos',
+}
+
+export enum MealsPerDay {
+  UMA = 'Uma',
+  DUAS = 'Duas',
+  TRES_OU_MAIS = 'Três ou mais',
+}
+
 export enum SituacaoPeso {
-  ADEQUADO = 'Adequado',
   ABAIXO = 'Abaixo',
+  NORMAL = 'Normal',
   ACIMA = 'Acima',
 }
+
+// --- ENTITIES ---
 
 @Entity('individuals')
 export class Individual {
@@ -58,10 +140,16 @@ export class Individual {
 
   // Bloco 1: Identificação Básica
   @Column({ default: false })
-  is_responsavel: boolean;
+  recusa_cadastro: boolean;
 
-  @Column()
-  possui_cartao_sus: boolean;
+  @Column({ default: false })
+  arquivado: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  motivo_saida: string;
+
+  @Column({ default: false })
+  is_responsavel: boolean;
 
   @Column({ type: 'varchar', nullable: true, unique: true })
   cartao_sus: string;
@@ -79,141 +167,56 @@ export class Individual {
   data_nascimento: Date;
 
   @Column({ type: 'varchar' })
-  sexo: string;
+  sexo: Sexo;
 
   @Column({ type: 'varchar' })
-  raca_cor: string;
+  raca_cor: RacaCor;
 
-  @Column({ type: 'varchar' })
-  nacionalidade: string;
-
-  @Column({ type: 'boolean', default: false })
-  desempregado: boolean;
-
-  @Column({ type: 'boolean', default: false })
-  analfabeto: boolean;
+  @Column({ type: 'varchar', default: Nacionalidade.BRASILEIRA })
+  nacionalidade: Nacionalidade;
 
   @Column({ type: 'varchar', nullable: true })
-  parentesco: string | null;
+  parentesco: Kinship | null;
+
+  // Bloco 2: Sociodemográfico 1
+  @Column({ type: 'varchar', nullable: true })
+  escolaridade: EducationLevel | null;
 
   @Column({ type: 'varchar', nullable: true })
-  escolaridade: string | null;
-
-  @Column({ type: 'varchar', nullable: true })
-  situacao_mercado_trabalho: string | null;
-
-  @Column({ type: 'varchar', nullable: true })
-  ocupacao: string | null;
-
-  @Column({ type: 'varchar', nullable: true })
-  orientacao_sexual: string | null;
-
-  @Column({ type: 'varchar', nullable: true })
-  identidade_genero: string | null;
-
-  @Column({ type: 'varchar', nullable: true })
-  etnia: string | null;
-
-  // Bloco 2: Contato e Filiação
-  @Column({ type: 'varchar', nullable: true })
-  telefone_celular: string;
-
-  @Column({ type: 'varchar', nullable: true })
-  email: string;
+  situacao_mercado_trabalho: JobStatus | null;
 
   @Column({ default: false })
-  nome_mae_desconhecido: boolean;
+  frequenta_escola: boolean;
+
+  // Bloco 3: Sociodemográfico 2
+  @Column({ type: 'varchar', nullable: true })
+  orientacao_sexual: SexualOrientation | null;
 
   @Column({ type: 'varchar', nullable: true })
-  nome_mae: string;
+  identidade_genero: GenderIdentity | null;
 
   @Column({ default: false })
-  nome_pai_desconhecido: boolean;
-
-  @Column({ type: 'varchar', nullable: true })
-  nome_pai: string;
-
-  // Bloco 3: Condições de Saúde (Sentinelas)
-  @Column()
   possui_deficiencia: boolean;
 
   @Column({ type: 'simple-array', nullable: true })
-  deficiencias: string[];
+  deficiencias: DisabilityType[];
 
-  @Column({ type: 'boolean', nullable: true })
-  internacao_12_meses: boolean | null;
+  @Column({ default: false })
+  plano_saude: boolean;
 
-  @Column({ type: 'varchar', nullable: true })
-  tria_inseguranca_alimentar: string | null;
-
-  @Column({ type: 'boolean', nullable: true })
-  gestante: boolean;
+  @Column({ default: false })
+  comunidade_tradicional: boolean;
 
   @Column({ type: 'varchar', nullable: true })
-  maternidade_referencia: string;
+  nome_comunidade: string;
 
-  @Column({ type: 'varchar' })
-  situacao_peso: string;
-
-  @Column()
-  fumante: boolean;
-
-  @Column()
-  uso_alcool: boolean;
-
-  @Column()
-  uso_outras_drogas: boolean;
-
-  @Column()
-  hipertensao_arterial: boolean;
-
-  @Column()
-  diabetes: boolean;
-
-  @Column()
-  teve_avc_derrame: boolean;
-
-  @Column()
-  teve_infarto: boolean;
-
-  @Column()
-  doenca_cardiaca: boolean;
-
-  @Column({ type: 'simple-array', nullable: true })
-  doencas_cardiacas_quais: string[];
-
-  @Column()
-  problemas_rins: boolean;
-
-  @Column({ type: 'simple-array', nullable: true })
-  problemas_rins_quais: string[];
-
-  @Column()
-  doenca_respiratoria: boolean;
-
-  @Column({ type: 'simple-array', nullable: true })
-  doencas_respiratorias_quais: string[];
-
-  @Column()
-  tuberculose: boolean;
-
-  @Column()
-  hanseniase: boolean;
-
-  @Column()
-  teve_cancer: boolean;
-
-  @Column()
-  doenca_mental_psiquiatrica: boolean;
-
-  @Column()
-  acamado: boolean;
-
-  @Column()
-  domiciliado: boolean;
-
-  @Column()
-  usa_plantas_medicinais: boolean;
+  // Relacionamento OneToOne para as Condições de Saúde (Blocos 4 e 5)
+  @OneToOne(() => IndividualHealth, (health) => health.individual, {
+    cascade: true,
+    eager: true,
+  })
+  @JoinColumn({ name: 'health_conditions_id' })
+  healthConditions: IndividualHealth;
 
   // Auditoria
   @CreateDateColumn()
@@ -230,201 +233,234 @@ export class Individual {
   }
 }
 
-export class CreateIndividualDto {
-  @IsUUID()
-  family_id: string;
+// --- DTOs ---
 
-  @IsOptional()
-  @IsBoolean()
-  is_responsavel?: boolean;
-
-  @IsBoolean()
-  possui_cartao_sus: boolean;
-
-  @ValidateIf((o) => o.possui_cartao_sus)
-  @IsString()
-  cartao_sus: string;
-
-  @IsOptional()
-  @IsString()
-  cpf?: string;
-
-  @IsString()
-  nome_completo: string;
-
-  @IsOptional()
-  @IsString()
-  nome_social?: string;
-
-  @IsDateString()
-  data_nascimento: string;
-
-  @IsEnum(Sexo)
-  sexo: Sexo;
-
-  @IsEnum(RacaCor)
-  raca_cor: RacaCor;
-
-  @IsEnum(Nacionalidade)
-  nacionalidade: Nacionalidade;
-
-  @IsOptional()
-  @IsBoolean()
-  desempregado?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  analfabeto?: boolean;
-
-  @IsOptional()
-  @IsString()
-  parentesco?: string;
-
-  @IsOptional()
-  @IsString()
-  escolaridade?: string;
-
-  @IsOptional()
-  @IsString()
-  situacao_mercado_trabalho?: string;
-
-  @IsOptional()
-  @IsString()
-  ocupacao?: string;
-
-  @IsOptional()
-  @IsString()
-  orientacao_sexual?: string;
-
-  @IsOptional()
-  @IsString()
-  identidade_genero?: string;
-
-  @IsOptional()
-  @IsString()
-  etnia?: string;
-
-  @IsOptional()
-  @IsString()
-  telefone_celular?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  nome_mae_desconhecido?: boolean;
-
-  @ValidateIf((o) => !o.nome_mae_desconhecido)
-  @IsString()
-  nome_mae: string;
-
-  @IsOptional()
-  @IsBoolean()
-  nome_pai_desconhecido?: boolean;
-
-  @IsOptional()
-  @IsString()
-  nome_pai?: string;
-
-  @IsBoolean()
-  possui_deficiencia: boolean;
-
-  @ValidateIf((o) => o.possui_deficiencia)
-  @IsArray()
-  @IsString({ each: true })
-  deficiencias: string[];
-
-  @IsOptional()
-  @IsBoolean()
-  internacao_12_meses?: boolean;
-
-  @IsOptional()
-  @IsString()
-  tria_inseguranca_alimentar?: string;
-
-  @ValidateIf((o) => o.sexo === Sexo.FEMININO)
+export class IndividualHealthDto {
+  @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()
   gestante?: boolean;
 
-  @ValidateIf((o) => o.gestante)
-  @IsString()
+  @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
   maternidade_referencia?: string;
 
-  @IsEnum(SituacaoPeso)
-  situacao_peso: SituacaoPeso;
-
-  @IsBoolean()
-  fumante: boolean;
-
-  @IsBoolean()
-  uso_alcool: boolean;
-
-  @IsBoolean()
-  uso_outras_drogas: boolean;
-
-  @IsBoolean()
-  hipertensao_arterial: boolean;
-
-  @IsBoolean()
-  diabetes: boolean;
-
-  @IsBoolean()
-  teve_avc_derrame: boolean;
-
-  @IsBoolean()
-  teve_infarto: boolean;
-
-  @IsBoolean()
-  doenca_cardiaca: boolean;
-
-  @ValidateIf((o) => o.doenca_cardiaca)
-  @IsArray()
-  @IsString({ each: true })
+  @ApiPropertyOptional({ default: false })
   @IsOptional()
-  doencas_cardiacas_quais?: string[];
-
   @IsBoolean()
-  problemas_rins: boolean;
+  acima_do_peso?: boolean;
 
-  @ValidateIf((o) => o.problemas_rins)
-  @IsArray()
-  @IsString({ each: true })
+  @ApiPropertyOptional({ default: false })
   @IsOptional()
-  problemas_rins_quais?: string[];
-
   @IsBoolean()
-  doenca_respiratoria: boolean;
+  fumante?: boolean;
 
-  @ValidateIf((o) => o.doenca_respiratoria)
-  @IsArray()
-  @IsString({ each: true })
+  @ApiPropertyOptional({ default: false })
   @IsOptional()
-  doencas_respiratorias_quais?: string[];
-
   @IsBoolean()
-  tuberculose: boolean;
+  uso_alcool?: boolean;
 
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
   @IsBoolean()
-  hanseniase: boolean;
+  uso_outras_drogas?: boolean;
 
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
   @IsBoolean()
-  teve_cancer: boolean;
+  hipertensao_arterial?: boolean;
 
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
   @IsBoolean()
-  doenca_mental_psiquiatrica: boolean;
+  diabetes?: boolean;
 
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
   @IsBoolean()
-  acamado: boolean;
+  teve_avc_derrame?: boolean;
 
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
   @IsBoolean()
-  domiciliado: boolean;
+  teve_infarto?: boolean;
 
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
   @IsBoolean()
-  usa_plantas_medicinais: boolean;
+  doenca_cardiaca?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  problemas_rins?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  doenca_respiratoria?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  tuberculose?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  hanseniase?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  teve_cancer?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  doenca_mental?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  acamado_domiciliado?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  situacao_de_rua?: boolean;
+
+  @ApiPropertyOptional({ enum: StreetTime })
+  @IsOptional()
+  @IsEnum(StreetTime)
+  tempo_rua?: StreetTime;
+
+  @IsOptional()
+  @IsBoolean()
+  recebe_beneficio?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  referencia_familiar?: boolean;
+
+  @ApiPropertyOptional({ enum: MealsPerDay })
+  @IsOptional()
+  @IsEnum(MealsPerDay)
+  refeicoes_dia?: MealsPerDay;
+}
+
+export class CreateIndividualDto {
+  @ApiProperty({ example: 'uuid-familia' })
+  @IsUUID()
+  family_id: string;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  recusa_cadastro?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  is_responsavel?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  cartao_sus?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  cpf?: string;
+
+  @ApiProperty({ example: 'José da Silva' })
+  @IsString()
+  @IsNotEmpty()
+  nome_completo: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  nome_social?: string;
+
+  @ApiProperty({ example: '1990-01-01' })
+  @IsString()
+  data_nascimento: string;
+
+  @ApiProperty({ enum: Sexo })
+  @IsEnum(Sexo)
+  sexo: Sexo;
+
+  @ApiProperty({ enum: RacaCor })
+  @IsEnum(RacaCor)
+  raca_cor: RacaCor;
+
+  @ApiProperty({ enum: Nacionalidade, default: Nacionalidade.BRASILEIRA })
+  @IsEnum(Nacionalidade)
+  nacionalidade: Nacionalidade;
+
+  @ApiPropertyOptional({ enum: Kinship })
+  @IsOptional()
+  @IsEnum(Kinship)
+  parentesco?: Kinship;
+
+  @ApiPropertyOptional({ enum: EducationLevel })
+  @IsOptional()
+  @IsEnum(EducationLevel)
+  escolaridade?: EducationLevel;
+
+  @ApiPropertyOptional({ enum: JobStatus })
+  @IsOptional()
+  @IsEnum(JobStatus)
+  situacao_mercado_trabalho?: JobStatus;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  frequenta_escola?: boolean;
+
+  @ApiPropertyOptional({ enum: SexualOrientation })
+  @IsOptional()
+  @IsEnum(SexualOrientation)
+  orientacao_sexual?: SexualOrientation;
+
+  @ApiPropertyOptional({ enum: GenderIdentity })
+  @IsOptional()
+  @IsEnum(GenderIdentity)
+  identidade_genero?: GenderIdentity;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  possui_deficiencia?: boolean;
+
+  @ApiPropertyOptional({ enum: DisabilityType, isArray: true })
+  @IsOptional()
+  @IsArray()
+  @IsEnum(DisabilityType, { each: true })
+  deficiencias?: DisabilityType[];
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  plano_saude?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  comunidade_tradicional?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  nome_comunidade?: string;
+
+  @ApiProperty({ type: IndividualHealthDto })
+  @ValidateIf((o) => !o.recusa_cadastro)
+  @Type(() => IndividualHealthDto)
+  healthConditions: IndividualHealthDto;
 }
 
 export class UpdateIndividualDto extends PartialType(CreateIndividualDto) {}

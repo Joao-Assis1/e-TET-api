@@ -2,7 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { IndividualsService } from './individuals.service';
-import { Individual } from './individual.entity';
+import {
+  Individual,
+  Sexo,
+  RacaCor,
+  Nacionalidade,
+  // IndividualHealth,
+} from './individual.entity';
 import { Family } from '../families/family.entity';
 
 describe('IndividualsService', () => {
@@ -78,29 +84,14 @@ describe('IndividualsService', () => {
       family_id: 'non-existent-family',
       nome_completo: 'Test',
       data_nascimento: '1990-01-01',
-      sexo: 'Masculino',
-      raca_cor: 'Branca',
-      nacionalidade: 'Brasileira',
+      sexo: Sexo.MASCULINO,
+      raca_cor: RacaCor.BRANCA,
+      nacionalidade: Nacionalidade.BRASILEIRA,
       possui_cartao_sus: false,
-      possui_deficiencia: false,
-      situacao_peso: 'Adequado',
-      fumante: false,
-      uso_alcool: false,
-      uso_outras_drogas: false,
-      hipertensao_arterial: false,
-      diabetes: false,
-      teve_avc_derrame: false,
-      teve_infarto: false,
-      doenca_cardiaca: false,
-      problemas_rins: false,
-      doenca_respiratoria: false,
-      tuberculose: false,
-      hanseniase: false,
-      teve_cancer: false,
-      doenca_mental_psiquiatrica: false,
-      acamado: false,
-      domiciliado: false,
-      usa_plantas_medicinais: false,
+      healthConditions: {
+        fumante: false,
+        uso_alcool: false,
+      },
     };
 
     await expect(service.create(dto)).rejects.toThrow(NotFoundException);
@@ -120,30 +111,29 @@ describe('IndividualsService', () => {
       family_id: 'family-uuid',
       nome_completo: 'Maria Silva',
       data_nascimento: '1990-01-01',
-      sexo: 'Feminino',
-      raca_cor: 'Branca',
-      nacionalidade: 'Brasileira',
+      sexo: Sexo.FEMININO,
+      raca_cor: RacaCor.BRANCA,
+      nacionalidade: Nacionalidade.BRASILEIRA,
       possui_cartao_sus: true,
       cartao_sus: '123456',
-      possui_deficiencia: false,
-      situacao_peso: 'Adequado',
-      fumante: false,
-      uso_alcool: false,
-      uso_outras_drogas: false,
-      hipertensao_arterial: false,
-      diabetes: false,
-      teve_avc_derrame: false,
-      teve_infarto: false,
-      doenca_cardiaca: false,
-      problemas_rins: false,
-      doenca_respiratoria: false,
-      tuberculose: false,
-      hanseniase: false,
-      teve_cancer: false,
-      doenca_mental_psiquiatrica: false,
-      acamado: false,
-      domiciliado: false,
-      usa_plantas_medicinais: false,
+      healthConditions: {
+        gestante: false,
+        fumante: false,
+        uso_alcool: false,
+        uso_outras_drogas: false,
+        hipertensao_arterial: false,
+        diabetes: false,
+        teve_avc_derrame: false,
+        teve_infarto: false,
+        doenca_cardiaca: false,
+        problemas_rins: false,
+        doenca_respiratoria: false,
+        tuberculose: false,
+        hanseniase: false,
+        teve_cancer: false,
+        doenca_mental: false,
+        acamado_domiciliado: false,
+      },
     };
 
     const result = await service.create(dto);
