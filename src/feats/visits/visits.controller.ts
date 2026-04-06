@@ -12,7 +12,7 @@ import { VisitsService } from './visits.service';
 import { CreateVisitDto, UpdateVisitDto } from './visit.entity';
 import { AuthGuard } from '../users/guards/auth.guard';
 
-@UseGuards(AuthGuard)
+// @UseGuards(AuthGuard)
 @Controller('visits')
 export class VisitsController {
   constructor(private readonly visitsService: VisitsService) {}

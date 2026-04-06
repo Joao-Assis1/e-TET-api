@@ -5,11 +5,12 @@ import { VisitsController } from './visits.controller';
 import { Visit } from './visit.entity';
 import { Household } from '../households/household.entity';
 import { Individual } from '../individuals/individual.entity';
+import { Family } from '../families/family.entity';
 import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Visit, Household, Individual]),
+    TypeOrmModule.forFeature([Visit, Household, Individual, Family]),
     UsersModule,
   ],
   controllers: [VisitsController],
