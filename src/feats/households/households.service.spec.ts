@@ -2,7 +2,20 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { HouseholdsService } from './households.service';
-import { Household } from './household.entity';
+import {
+  AnimalType,
+  ConstructionMaterial,
+  Household,
+  HouseholdAccess,
+  HouseholdLocation,
+  HouseholdType,
+  HousingSituation,
+  SewageDisposal,
+  TrashDestination,
+  WaterSupply,
+  WaterTreatment,
+} from './household.entity';
+import { User } from '../users/user.entity';
 
 describe('HouseholdsService', () => {
   let service: HouseholdsService;
@@ -10,8 +23,13 @@ describe('HouseholdsService', () => {
   const mockHouseholdRepository = {
     find: jest.fn(),
     findOne: jest.fn(),
+    findOneBy: jest.fn(),
     save: jest.fn(),
     softRemove: jest.fn(),
+  };
+
+  const mockUserRepository = {
+    findOneBy: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -21,6 +39,10 @@ describe('HouseholdsService', () => {
         {
           provide: getRepositoryToken(Household),
           useValue: mockHouseholdRepository,
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: mockUserRepository,
         },
       ],
     }).compile();
@@ -67,15 +89,15 @@ describe('HouseholdsService', () => {
       logradouro: 'Rua B',
       numero: '20',
       bairro: 'Centro',
-      situacao_moradia: 'Própria',
-      localizacao: 'Urbana',
-      tipo_domicilio: 'Casa',
+      situacao_moradia: HousingSituation.PROPRIO,
+      localizacao: HouseholdLocation.URBANA,
+      tipo_domicilio: HouseholdType.CASA,
       numero_moradores: 4,
       numero_comodos: 5,
-      material_construcao: 'Alvenaria',
-      abastecimento_agua: 'Rede pública',
-      agua_consumo: 'Filtrada',
-      escoamento_banheiro: 'Rede pública',
+      material_construcao: ConstructionMaterial.ALVENARIA_TIJOLO_COM_REVESTIMENTO,
+      abastecimento_agua: WaterSupply.REDE_ENCANADA,
+      agua_consumo: WaterTreatment.FILTRACAO,
+      escoamento_banheiro: SewageDisposal.REDE_COLETORA,
       possui_animais: false,
     };
     mockHouseholdRepository.save.mockImplementation((h) =>

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Family, CreateFamilyDto, UpdateFamilyDto } from './family.entity';
+import { Family, CreateFamilyDto, UpdateFamilyDto, FamilyStatus, FamilyIncome } from './family.entity';
 
 const POSTGRES_UNIQUE_VIOLATION_CODE = '23505';
 const SQLITE_UNIQUE_VIOLATION_CODE = 'SQLITE_CONSTRAINT_UNIQUE';
@@ -24,8 +24,8 @@ export class FamiliesService {
       const { household_id, ...rest } = createFamilyDto;
       const family = new Family({
         ...rest,
-        reside_desde: new Date(createFamilyDto.reside_desde),
-        household: { id: household_id } as any,
+        reside_desde: createFamilyDto.reside_desde,
+        household: household_id ? ({ id: household_id } as any) : null,
       });
       return await this.familyRepository.save(family);
     } catch (error) {
@@ -60,10 +60,8 @@ export class FamiliesService {
       ...rest,
       household: household_id
         ? ({ id: household_id } as any)
-        : family.household,
-      reside_desde: updateFamilyDto.reside_desde
-        ? new Date(updateFamilyDto.reside_desde)
-        : family.reside_desde,
+        : (household_id === null ? null : family.household),
+      reside_desde: updateFamilyDto.reside_desde ?? family.reside_desde,
     });
 
     try {
@@ -87,7 +85,7 @@ export class FamiliesService {
   /**
    * Exemplo de transação com Pessimistic Locking para prevenir Race Conditions.
    */
-  async syncFamilyData(id: string, newIncome: number): Promise<Family> {
+  async syncFamilyData(id: string, newIncome: FamilyIncome): Promise<Family> {
     const queryRunner = this.dataSource.createQueryRunner();
 
     await queryRunner.connect();
@@ -123,6 +121,39 @@ export class FamiliesService {
       );
     } finally {
       await queryRunner.release();
+    }
+  }
+
+  async registerFamilyMove(id: string, reason?: string): Promise<Family> {
+    const family = await this.familyRepository.findOne({
+      where: { id },
+      relations: ['household'],
+    });
+
+    if (!family) {
+      throw new NotFoundException(`Família com ID ${id} não encontrada`);
+    }
+
+    const oldHouseholdId = family.household?.id;
+    const moveLog = `Mudou-se em ${new Date().toISOString()}${
+      oldHouseholdId ? `; Domicílio prévio: ${oldHouseholdId}` : ''
+    }${reason ? `; Motivo: ${reason}` : ''}`;
+
+    family.historico_domicilios = family.historico_domicilios
+      ? [...family.historico_domicilios, moveLog]
+      : [moveLog];
+    
+    // TypeORM supports unlinking by setting to null
+    family.household = null;
+    family.status_mudanca = FamilyStatus.MUDOU_SE;
+    family.arquivada = true;
+
+    try {
+      return await this.familyRepository.save(family);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Erro ao processar arquivamento/mudança de família.',
+      );
     }
   }
 }

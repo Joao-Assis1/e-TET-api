@@ -16,11 +16,94 @@ import {
   IsOptional,
   ValidateIf,
   IsArray,
+  IsEnum,
 } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Family } from '../families/family.entity';
 import { User } from '../users/user.entity';
+
+export enum HousingSituation {
+  PROPRIO = 'Próprio',
+  ALUGADO = 'Alugado',
+  ARRENDADO = 'Arrendado',
+  CEDIDO = 'Cedido',
+  OCUPACAO = 'Ocupação',
+  SITUACAO_RUA = 'Situação de rua',
+  OUTRA = 'Outra',
+}
+
+export enum HouseholdType {
+  CASA = 'Casa',
+  APARTAMENTO = 'Apartamento',
+  COMODO = 'Cômodo',
+  OUTRO = 'Outro',
+}
+
+export enum ConstructionMaterial {
+  ALVENARIA_TIJOLO_COM_REVESTIMENTO = 'Alvenaria/Tijolo com revestimento',
+  ALVENARIA_TIJOLO_SEM_REVESTIMENTO = 'Alvenaria/Tijolo sem revestimento',
+  TAIPA_COM_REVESTIMENTO = 'Taipa com revestimento',
+  TAIPA_SEM_REVESTIMENTO = 'Taipa sem revestimento',
+  MADEIRA_APROPRIADA = 'Madeira apropriada para construção',
+  MATERIAL_APROVEITADO = 'Material aproveitado (sucata)',
+  PALHA = 'Palha',
+  OUTRO = 'Outro',
+}
+
+export enum WaterSupply {
+  REDE_ENCANADA = 'Rede encanada até o domicílio',
+  POCO_OU_NASCENTE = 'Poço ou nascente no domicílio',
+  CISTERNA = 'Cisterna',
+  CARRO_PIPA = 'Carro-pipa',
+  OUTRO = 'Outro',
+}
+
+export enum WaterTreatment {
+  FILTRACAO = 'Filtração',
+  FERVURA = 'Fervura',
+  CLORACAO = 'Cloração',
+  MINERAL = 'Mineral',
+  SEM_TRATAMENTO = 'Sem tratamento',
+}
+
+export enum SewageDisposal {
+  REDE_COLETORA = 'Rede coletora de esgoto ou pluvial',
+  FOSSA_SEPTICA = 'Fossa séptica',
+  FOSSA_RUDIMENTAR = 'Fossa rudimentar',
+  DIRETO_PARA_RIO_LAGO_OU_MAR = 'Direto para rio, lago ou mar',
+  CEU_ABERTO = 'Céu aberto',
+  OUTRO = 'Outro',
+}
+
+export enum TrashDestination {
+  COLETADO = 'Coletado',
+  QUEIMADO_OU_ENTERRADO = 'Queimado ou enterrado no imóvel',
+  CEU_ABERTO_OU_TERRENO_BALDIO = 'Céu aberto ou terreno baldio',
+  OUTRO = 'Outro',
+}
+
+export enum HouseholdLocation {
+  URBANA = 'Urbana',
+  RURAL = 'Rural',
+}
+
+export enum HouseholdAccess {
+  PAVIMENTADO = 'Pavimentado',
+  CHAO_BATIDO = 'Chão batido',
+  FLUVIAL = 'Fluvial',
+  OUTRO = 'Outro',
+}
+
+export enum AnimalType {
+  CACHORRO = 'Cachorro',
+  GATO = 'Gato',
+  PASSARO = 'Pássaro',
+  CAVALOS_EQUINOS = 'Cavalos/Eqüinos',
+  PORCO_SUINOS = 'Porco/Suínos',
+  AVES = 'Aves',
+  OUTRO = 'Outro',
+}
 
 @Entity('households')
 export class Household {
@@ -46,43 +129,82 @@ export class Household {
   microarea: string | null;
 
   @Column({ type: 'varchar', nullable: true })
+  ponto_referencia: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
   telefone_residencial: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  telefone_contato: string | null;
 
   @Column({ type: 'varchar', nullable: true })
   coordenadas_gps: string | null;
 
-  @Column({ type: 'varchar' })
-  situacao_moradia: string;
+  @Column({ type: 'boolean', default: false })
+  recusa_cadastro: boolean;
 
-  @Column({ type: 'varchar' })
-  localizacao: string;
+  @Column({ type: 'timestamp', nullable: true })
+  data_ultima_visita: Date | null;
 
-  @Column({ type: 'varchar' })
-  tipo_domicilio: string;
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  situacao_moradia: HousingSituation | null;
 
-  @Column({ type: 'int' })
-  numero_moradores: number;
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  localizacao: HouseholdLocation | null;
 
-  @Column({ type: 'int' })
-  numero_comodos: number;
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  tipo_domicilio: HouseholdType | null;
 
-  @Column({ type: 'varchar' })
-  material_construcao: string;
+  @Column({ type: 'int', nullable: true })
+  numero_moradores: number | null;
 
-  @Column({ type: 'varchar', nullable: true })
-  tipo_acesso_domicilio: string | null;
+  @Column({ type: 'int', nullable: true })
+  numero_comodos: number | null;
 
-  @Column({ type: 'varchar' })
-  abastecimento_agua: string;
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  material_construcao: ConstructionMaterial | null;
 
-  @Column({ type: 'varchar' })
-  agua_consumo: string;
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  tipo_acesso_domicilio: HouseholdAccess | null;
 
-  @Column({ type: 'varchar' })
-  escoamento_banheiro: string;
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  abastecimento_agua: WaterSupply | null;
 
-  @Column({ type: 'varchar', nullable: true })
-  destino_lixo: string | null;
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  agua_consumo: WaterTreatment | null;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  escoamento_banheiro: SewageDisposal | null;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  destino_lixo: TrashDestination | null;
 
   @Column({ type: 'boolean', default: false })
   energia_eletrica: boolean;
@@ -94,7 +216,7 @@ export class Household {
   quantidade_animais: number | null;
 
   @Column({ type: 'simple-json', nullable: true })
-  animais_quais: string[] | null;
+  animais_quais: AnimalType[] | null;
 
   @OneToMany(() => Family, (family) => family.household)
   families: Family[];
@@ -151,58 +273,82 @@ export class CreateHouseholdDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  ponto_referencia?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   telefone_residencial?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  telefone_contato?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   coordenadas_gps?: string;
 
-  @ApiProperty({ example: 'Próprio' })
-  @IsString()
-  situacao_moradia: string;
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  recusa_cadastro?: boolean;
 
-  @ApiProperty({ example: 'Urbana' })
-  @IsString()
-  localizacao: string;
+  @ApiProperty({ enum: HousingSituation })
+  @ValidateIf((o: CreateHouseholdDto) => !o.recusa_cadastro)
+  @IsEnum(HousingSituation)
+  situacao_moradia: HousingSituation;
 
-  @ApiProperty({ example: 'Casa' })
-  @IsString()
-  tipo_domicilio: string;
+  @ApiProperty({ enum: HouseholdLocation })
+  @ValidateIf((o: CreateHouseholdDto) => !o.recusa_cadastro)
+  @IsEnum(HouseholdLocation)
+  localizacao: HouseholdLocation;
+
+  @ApiProperty({ enum: HouseholdType })
+  @ValidateIf((o: CreateHouseholdDto) => !o.recusa_cadastro)
+  @IsEnum(HouseholdType)
+  tipo_domicilio: HouseholdType;
 
   @ApiProperty({ example: 4 })
+  @ValidateIf((o: CreateHouseholdDto) => !o.recusa_cadastro)
   @IsInt()
   numero_moradores: number;
 
   @ApiProperty({ example: 5 })
+  @ValidateIf((o: CreateHouseholdDto) => !o.recusa_cadastro)
   @IsInt()
   numero_comodos: number;
 
-  @ApiProperty({ example: 'Alvenaria/Tijolo com revestimento' })
-  @IsString()
-  material_construcao: string;
+  @ApiProperty({ enum: ConstructionMaterial })
+  @ValidateIf((o: CreateHouseholdDto) => !o.recusa_cadastro)
+  @IsEnum(ConstructionMaterial)
+  material_construcao: ConstructionMaterial;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: HouseholdAccess })
   @IsOptional()
-  @IsString()
-  tipo_acesso_domicilio?: string;
+  @IsEnum(HouseholdAccess)
+  tipo_acesso_domicilio?: HouseholdAccess;
 
-  @ApiProperty({ example: 'Rede encanada até o domicílio' })
-  @IsString()
-  abastecimento_agua: string;
+  @ApiProperty({ enum: WaterSupply })
+  @ValidateIf((o: CreateHouseholdDto) => !o.recusa_cadastro)
+  @IsEnum(WaterSupply)
+  abastecimento_agua: WaterSupply;
 
-  @ApiProperty({ example: 'Filtrada' })
-  @IsString()
-  agua_consumo: string;
+  @ApiProperty({ enum: WaterTreatment })
+  @ValidateIf((o: CreateHouseholdDto) => !o.recusa_cadastro)
+  @IsEnum(WaterTreatment)
+  agua_consumo: WaterTreatment;
 
-  @ApiProperty({ example: 'Rede coletora de esgoto ou pluvial' })
-  @IsString()
-  escoamento_banheiro: string;
+  @ApiProperty({ enum: SewageDisposal })
+  @ValidateIf((o: CreateHouseholdDto) => !o.recusa_cadastro)
+  @IsEnum(SewageDisposal)
+  escoamento_banheiro: SewageDisposal;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: TrashDestination })
   @IsOptional()
-  @IsString()
-  destino_lixo?: string;
+  @IsEnum(TrashDestination)
+  destino_lixo?: TrashDestination;
 
   @ApiPropertyOptional({ default: true })
   @IsOptional()
@@ -218,12 +364,12 @@ export class CreateHouseholdDto {
   @IsInt()
   quantidade_animais?: number;
 
-  @ApiPropertyOptional({ example: [] })
+  @ApiPropertyOptional({ enum: AnimalType, isArray: true })
   @ValidateIf((o: CreateHouseholdDto) => o.possui_animais === true)
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  animais_quais?: string[];
+  @IsEnum(AnimalType, { each: true })
+  animais_quais?: AnimalType[];
 }
 
 export class UpdateHouseholdDto extends PartialType(CreateHouseholdDto) {}

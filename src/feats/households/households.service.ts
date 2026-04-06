@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { User } from '../users/user.entity';
 import {
   Household,
@@ -27,14 +27,19 @@ export class HouseholdsService {
       const user = await this.userRepository.findOneBy({ id: userId });
       if (user) {
         household.createdBy = user;
-        household.cns_profissional = user.cns;
+        household.cns_profissional = user.cns_profissional;
       }
     }
 
     return this.householdRepository.save(household);
   }
 
-  async findAll(): Promise<Household[]> {
+  async findAll(logradouro?: string): Promise<Household[]> {
+    if (logradouro) {
+      return this.householdRepository.find({
+        where: { logradouro: ILike(`%${logradouro}%`) },
+      });
+    }
     return this.householdRepository.find();
   }
 
