@@ -1,90 +1,74 @@
 import { Type } from 'class-transformer';
 import {
-  ValidateNested,
   IsBoolean,
   IsArray,
   IsOptional,
-  IsInt,
   IsString,
   IsEnum,
   IsDateString,
   ValidateIf,
+  IsUUID,
 } from 'class-validator';
 import { CreateFamilyDto } from '../families/family.entity';
+import { CreateHouseholdDto } from '../households/household.entity';
+import { CreateVisitDto } from '../visits/visit.entity';
 import {
-  CreateIndividualDto,
   Sexo,
   RacaCor,
   Nacionalidade,
-  SituacaoPeso,
+  IndividualHealthDto,
+  EducationLevel,
+  JobStatus,
+  Kinship,
+  SexualOrientation,
+  GenderIdentity,
+  DisabilityType
 } from '../individuals/individual.entity';
 
-export class SyncFamilyDataDto extends CreateFamilyDto {}
+import { PartialType } from '@nestjs/mapped-types';
 
-// Omit family_id from CreateIndividualDto for sync payload because it will be inferred
-// We extend the base properties we need. Since CreateIndividualDto might have strict family_id validation,
-// we recreate a type that allows it to be optional or we use OmitType. For simplicity and self-containment:
+export class SyncHouseholdDataDto extends PartialType(CreateHouseholdDto) {
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+}
+
+export class SyncFamilyDataDto extends PartialType(CreateFamilyDto) {
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
+  @IsOptional()
+  @IsUUID()
+  household_id?: string;
+}
+
+export class SyncVisitDataDto extends PartialType(CreateVisitDto) {
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+}
+
 export class SyncIndividualDataDto {
   @IsOptional()
-  @IsString()
-  id?: string; // Para identificar se é atualização
-
-  @IsBoolean()
-  @IsOptional()
-  desempregado?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
-  analfabeto?: boolean;
+  @IsUUID()
+  id?: string;
 
   @IsOptional()
-  @IsString()
-  parentesco?: string;
+  @IsUUID()
+  family_id?: string;
 
-  @IsOptional()
-  @IsString()
-  escolaridade?: string;
-
-  @IsOptional()
-  @IsString()
-  situacao_mercado_trabalho?: string;
-
-  @IsOptional()
-  @IsString()
-  ocupacao?: string;
-
-  @IsOptional()
-  @IsString()
-  orientacao_sexual?: string;
-
-  @IsOptional()
-  @IsString()
-  identidade_genero?: string;
-
-  @IsOptional()
-  @IsString()
-  etnia?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  internacao_12_meses?: boolean;
-
-  @IsOptional()
-  @IsString()
-  tria_inseguranca_alimentar?: string;
-
-  // Propriedades essenciais do Indivíduo (Baseado na entidade original)
   @IsOptional()
   @IsBoolean()
   is_responsavel?: boolean;
 
-  @IsBoolean()
-  possui_cartao_sus: boolean;
-
-  @ValidateIf((o) => o.possui_cartao_sus)
-  @IsString()
   @IsOptional()
+  @IsString()
   cartao_sus?: string;
+
+  @IsOptional()
+  @IsString()
+  cpf?: string;
 
   @IsString()
   nome_completo: string;
@@ -105,71 +89,73 @@ export class SyncIndividualDataDto {
   @IsEnum(Nacionalidade)
   nacionalidade: Nacionalidade;
 
-  @IsBoolean()
-  possui_deficiencia: boolean;
+  @IsOptional()
+  @IsEnum(Kinship)
+  parentesco?: Kinship;
 
-  @IsEnum(SituacaoPeso)
-  situacao_peso: SituacaoPeso;
+  @IsOptional()
+  @IsEnum(EducationLevel)
+  escolaridade?: EducationLevel;
 
-  @IsBoolean()
-  fumante: boolean;
+  @IsOptional()
+  @IsEnum(JobStatus)
+  situacao_mercado_trabalho?: JobStatus;
 
+  @IsOptional()
   @IsBoolean()
-  uso_alcool: boolean;
+  frequenta_escola?: boolean;
 
-  @IsBoolean()
-  uso_outras_drogas: boolean;
+  @IsOptional()
+  @IsEnum(SexualOrientation)
+  orientacao_sexual?: SexualOrientation;
 
-  @IsBoolean()
-  hipertensao_arterial: boolean;
+  @IsOptional()
+  @IsEnum(GenderIdentity)
+  identidade_genero?: GenderIdentity;
 
+  @IsOptional()
   @IsBoolean()
-  diabetes: boolean;
+  possui_deficiencia?: boolean;
 
-  @IsBoolean()
-  teve_avc_derrame: boolean;
+  @IsOptional()
+  @IsArray()
+  @IsEnum(DisabilityType, { each: true })
+  deficiencias?: DisabilityType[];
 
+  @IsOptional()
   @IsBoolean()
-  teve_infarto: boolean;
+  plano_saude?: boolean;
 
+  @IsOptional()
   @IsBoolean()
-  doenca_cardiaca: boolean;
+  comunidade_tradicional?: boolean;
 
-  @IsBoolean()
-  problemas_rins: boolean;
+  @IsOptional()
+  @IsString()
+  nome_comunidade?: string;
 
-  @IsBoolean()
-  doenca_respiratoria: boolean;
-
-  @IsBoolean()
-  tuberculose: boolean;
-
-  @IsBoolean()
-  hanseniase: boolean;
-
-  @IsBoolean()
-  teve_cancer: boolean;
-
-  @IsBoolean()
-  doenca_mental_psiquiatrica: boolean;
-
-  @IsBoolean()
-  acamado: boolean;
-
-  @IsBoolean()
-  domiciliado: boolean;
-
-  @IsBoolean()
-  usa_plantas_medicinais: boolean;
+  @Type(() => IndividualHealthDto)
+  healthConditions: IndividualHealthDto;
 }
 
-export class SyncFamilyPayloadDto {
-  @ValidateNested()
-  @Type(() => SyncFamilyDataDto)
-  family: SyncFamilyDataDto;
-
+export class SyncBatchPayloadDto {
+  @IsOptional()
   @IsArray()
-  @ValidateNested({ each: true })
+  @Type(() => SyncHouseholdDataDto)
+  households?: SyncHouseholdDataDto[];
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => SyncFamilyDataDto)
+  families?: SyncFamilyDataDto[];
+
+  @IsOptional()
+  @IsArray()
   @Type(() => SyncIndividualDataDto)
-  individuals: SyncIndividualDataDto[];
+  individuals?: SyncIndividualDataDto[];
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => SyncVisitDataDto)
+  visits?: SyncVisitDataDto[];
 }

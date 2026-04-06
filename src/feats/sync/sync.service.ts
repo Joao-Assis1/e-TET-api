@@ -1,185 +1,229 @@
 import {
   Injectable,
-  ConflictException,
   InternalServerErrorException,
+  Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { SyncFamilyPayloadDto } from './sync.dto';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+
+import {
+  SyncBatchPayloadDto,
+  SyncHouseholdDataDto,
+  SyncFamilyDataDto,
+  SyncIndividualDataDto,
+  SyncVisitDataDto,
+} from './sync.dto';
+import { EsusThriftService } from './esus-thrift.service';
+import { Household } from '../households/household.entity';
 import { Family } from '../families/family.entity';
-import { Individual } from '../individuals/individual.entity';
+import { Individual, JobStatus } from '../individuals/individual.entity';
+import { IndividualHealth } from '../individuals/individual-health.entity';
+import { Visit } from '../visits/visit.entity';
+import { User } from '../users/user.entity';
 
 @Injectable()
 export class SyncService {
-  constructor(private readonly dataSource: DataSource) {}
+  private readonly logger = new Logger(SyncService.name);
 
-  async syncFamilyData(payload: SyncFamilyPayloadDto) {
-    // 1. Injetar o DataSource do TypeORM e criar um QueryRunner
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly esusThriftService: EsusThriftService,
+  ) {}
+
+  async getInitialSyncData(userId: number) {
+    const user = await this.dataSource.manager.findOne(User, {
+      where: { id: userId },
+    });
+    if (!user) throw new InternalServerErrorException('Usuário não encontrado.');
+
+    const households = await this.dataSource.manager.find(Household, {
+      where: { createdBy: { id: userId } },
+    });
+
+    const householdIds = households.map((h) => h.id);
+    let families: Family[] = [];
+    let individuals: Individual[] = [];
+    let visits: Visit[] = [];
+
+    if (householdIds.length > 0) {
+      families = await this.dataSource.manager
+        .createQueryBuilder(Family, 'family')
+        .where('family.household_id IN (:...ids)', { ids: householdIds })
+        .getMany();
+
+      const familyIds = families.map((f) => f.id);
+      if (familyIds.length > 0) {
+        individuals = await this.dataSource.manager
+          .createQueryBuilder(Individual, 'individual')
+          .leftJoinAndSelect('individual.healthConditions', 'hc')
+          .where('individual.family_id IN (:...ids)', { ids: familyIds })
+          .getMany();
+      }
+
+      visits = await this.dataSource.manager
+        .createQueryBuilder(Visit, 'visit')
+        .where('visit.household_id IN (:...ids)', { ids: householdIds })
+        .getMany();
+    }
+
+    return {
+      sucesso: true,
+      message: 'Dados iniciais carregados para o tablet',
+      data: {
+        households,
+        families,
+        individuals,
+        visits,
+      },
+    };
+  }
+
+  async processBatchSync(payload: SyncBatchPayloadDto, userId: number) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
-
-    // Iniciar a transação
     await queryRunner.startTransaction();
 
+    const inconsistencies: any = { households: [], families: [], individuals: [], visits: [] };
+    const savedIds: any = { households: [], families: [], individuals: [], visits: [] };
+    const failedIds = { households: new Set<string>(), families: new Set<string>() };
+
     try {
-      const { family, individuals } = payload;
+      const { households = [], families = [], individuals = [], visits = [] } = payload;
+      const user = await queryRunner.manager.findOne(User, { where: { id: userId } });
 
-      // 2. Pessimistic Lock: Prevenir Race Conditions ao verificar se a família já existe
-      const existingFamily = await queryRunner.manager.findOne(Family, {
-        where: { numero_prontuario: family.numero_prontuario },
-      });
+      // 1. Households
+      for (const h of households) {
+        const dto = plainToInstance(SyncHouseholdDataDto, h);
+        const errors = await validate(dto);
+        if (errors.length > 0) { inconsistencies.households.push({ id: h.id, erro: 'Erro validação' }); if (h.id) failedIds.households.add(h.id); continue; }
 
-      // 3. Validação do Teto Máximo (Regra Clínica)
-      const diseasesToCheck = [
-        'hipertensao_arterial',
-        'diabetes',
-        'teve_avc_derrame',
-        'teve_infarto',
-        'doenca_cardiaca',
-        'problemas_rins',
-        'doenca_respiratoria',
-        'tuberculose',
-        'hanseniase',
-        'teve_cancer',
-        'doenca_mental_psiquiatrica',
-      ];
+        try {
+          const { id, ...data } = h;
+          let hdEntity = id ? await queryRunner.manager.findOne(Household, { where: { id } }) : null;
+          const baseData: any = { ...data, id: id || undefined, createdBy: user || undefined };
+          
+          if (hdEntity) {
+            hdEntity = queryRunner.manager.merge(Household, hdEntity, baseData);
+          } else {
+            hdEntity = queryRunner.manager.create(Household, baseData);
+          }
+          await queryRunner.manager.save(Household, hdEntity!);
+          if (hdEntity!.id) savedIds.households.push(hdEntity!.id);
+        } catch (e) { inconsistencies.households.push({ id: h.id, erro: (e as Error).message }); if (h.id) failedIds.households.add(h.id); }
+      }
 
-      for (const disease of diseasesToCheck) {
-        const count = individuals.filter((ind) => ind[disease] === true).length;
-        if (count > family.numero_membros) {
-          throw new ConflictException(
-            `Inconsistência identificada: O número de indivíduos com a doença '${disease}' (${count}) é MAIOR que o total de membros da família (${family.numero_membros}).`,
-          );
+      const individualsByFamily = new Map<string, any[]>();
+      for (const ind of individuals) { if (ind.family_id) { if (!individualsByFamily.has(ind.family_id)) { individualsByFamily.set(ind.family_id, []); } individualsByFamily.get(ind.family_id)!.push(ind); } }
+
+      // 2. Families
+      for (const f of families) {
+        if (f.household_id && failedIds.households.has(f.household_id)) { inconsistencies.families.push({ id: f.id, erro: 'Cascata' }); if (f.id) failedIds.families.add(f.id); continue; }
+
+        const dto = plainToInstance(SyncFamilyDataDto, f);
+        const errors = await validate(dto);
+        if (errors.length > 0) { inconsistencies.families.push({ id: f.id, erro: 'Erro' }); if (f.id) failedIds.families.add(f.id); continue; }
+
+        const inds = (f.id ? individualsByFamily.get(f.id) : []) || [];
+        let r = 0;
+        for (const ind of inds) {
+          const hc = ind.healthConditions || {};
+          if (hc.acamado_domiciliado) r += 3;
+          if (ind.possui_deficiencia) r += 3;
+          if (hc.uso_alcool || hc.uso_outras_drogas || hc.fumante) r += 2;
+          if (ind.situacao_mercado_trabalho === JobStatus.DESEMPREGADO) r += 2;
+          if (ind.data_nascimento) {
+            const birthDate = new Date(ind.data_nascimento);
+            const ageMonths = (Date.now() - birthDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44);
+            const ageYears = Math.abs(new Date(Date.now() - birthDate.getTime()).getUTCFullYear() - 1970);
+            if (ageMonths < 6) r += 1;
+            if (ageYears > 70) r += 1;
+          }
+          if (hc.hipertensao_arterial) r += 1;
+          if (hc.diabetes) r += 1;
         }
+        if (f.saneamento_inadequado) r += 3;
+
+        let classificacao_risco = 'Sem Risco';
+        if (r >= 9) classificacao_risco = 'R3 - Risco máximo';
+        else if (r >= 7) classificacao_risco = 'R2 - Risco médio';
+        else if (r >= 5) classificacao_risco = 'R1 - Risco menor';
+
+        try {
+          const { id, household_id, ...data } = f;
+          let fEntity = id ? await queryRunner.manager.findOne(Family, { where: { id } }) : null;
+          const baseData: any = { 
+            ...data, 
+            id: id || undefined,
+            pontuacao_risco: r, 
+            classificacao_risco, 
+            household: household_id ? { id: household_id } : undefined,
+            reside_desde: data.reside_desde ? new Date(data.reside_desde) : undefined
+          };
+          if (fEntity) { fEntity = queryRunner.manager.merge(Family, fEntity, baseData); }
+          else { fEntity = queryRunner.manager.create(Family, baseData); }
+          await queryRunner.manager.save(Family, fEntity!);
+          if (fEntity!.id) savedIds.families.push(fEntity!.id);
+        } catch (e) { inconsistencies.families.push({ id: f.id, erro: (e as Error).message }); if (f.id) failedIds.families.add(f.id); }
       }
 
-      // 4. Cálculo da Estratificação de Coelho-Savassi
-      let pontuacao_risco = 0;
+      // 3. Individuals
+      for (const i of individuals) {
+        if (i.family_id && failedIds.families.has(i.family_id)) { inconsistencies.individuals.push({ id: i.id, erro: 'Cascata' }); continue; }
+        const dto = plainToInstance(SyncIndividualDataDto, i);
+        const errors = await validate(dto);
+        if (errors.length > 0) { inconsistencies.individuals.push({ id: i.id, erro: 'Erro' }); continue; }
 
-      for (const ind of individuals) {
-        // Acamado
-        if (ind.acamado) pontuacao_risco += 3;
+        try {
+          const { id, family_id, healthConditions, ...data } = i;
+          let iEnt = id ? await queryRunner.manager.findOne(Individual, { where: { id }, relations: ['healthConditions'] }) : null;
+          const base: any = { ...data, id: id || undefined, family: family_id ? { id: family_id } : undefined, data_nascimento: data.data_nascimento ? new Date(data.data_nascimento) : undefined };
 
-        // Possui deficiência (física ou mental)
-        if (ind.possui_deficiencia) pontuacao_risco += 3;
-
-        // Desnutrição grave (Situação Peso: Abaixo)
-        if (ind.situacao_peso === 'Abaixo') pontuacao_risco += 3;
-
-        // Drogadição (Uso de álcool, drogas ou fumante)
-        if (ind.uso_alcool || ind.uso_outras_drogas || ind.fumante)
-          pontuacao_risco += 2;
-
-        // Desempregado
-        if (ind.desempregado) pontuacao_risco += 2;
-
-        // Analfabeto
-        if (ind.analfabeto) pontuacao_risco += 1;
-
-        // Idade (Menor de 6 meses ou Maior de 70 anos)
-        if (ind.data_nascimento) {
-          const birthDate = new Date(ind.data_nascimento);
-          const ageDifMs = Date.now() - birthDate.getTime();
-          const ageDate = new Date(ageDifMs);
-          const ageYears = Math.abs(ageDate.getUTCFullYear() - 1970);
-          const ageMonths = ageDifMs / (1000 * 60 * 60 * 24 * 30.44);
-
-          if (ageMonths < 6) pontuacao_risco += 1;
-          if (ageYears > 70) pontuacao_risco += 1;
-        }
-
-        // Doenças crónicas comuns
-        if (ind.hipertensao_arterial) pontuacao_risco += 1;
-        if (ind.diabetes) pontuacao_risco += 1;
+          if (iEnt) {
+            if (iEnt.healthConditions && healthConditions) iEnt.healthConditions = queryRunner.manager.merge(IndividualHealth, iEnt.healthConditions, healthConditions);
+            else if (healthConditions) iEnt.healthConditions = queryRunner.manager.create(IndividualHealth, healthConditions);
+            iEnt = queryRunner.manager.merge(Individual, iEnt, base);
+          } else {
+            iEnt = queryRunner.manager.create(Individual, base);
+            if (healthConditions) iEnt.healthConditions = queryRunner.manager.create(IndividualHealth, healthConditions);
+          }
+          await queryRunner.manager.save(Individual, iEnt!);
+          if (iEnt!.id) savedIds.individuals.push(iEnt!.id);
+        } catch (e) { inconsistencies.individuals.push({ id: i.id, erro: (e as Error).message }); }
       }
 
-      // Variáveis da Família
-      if (family.saneamento_inadequado) {
-        pontuacao_risco += 3;
+      // 4. Visits
+      for (const v of visits) {
+        if (v.household_id && failedIds.households.has(v.household_id)) { inconsistencies.visits.push({ id: v.id, erro: 'Cascata' }); continue; }
+        try {
+          const { id, household_id, family_id, individual_id, ...data } = v;
+          let vEnt = id ? await queryRunner.manager.findOne(Visit, { where: { id } }) : null;
+          const base: any = { ...data, id: id || undefined, household: household_id ? { id: household_id } : undefined, family: family_id ? { id: family_id } : undefined, individual: individual_id ? { id: individual_id } : undefined, data_visita: data.data_visita ? new Date(data.data_visita) : undefined };
+          if (vEnt) vEnt = queryRunner.manager.merge(Visit, vEnt, base);
+          else vEnt = queryRunner.manager.create(Visit, base);
+          await queryRunner.manager.save(Visit, vEnt!);
+          if (vEnt!.id) savedIds.visits.push(vEnt!.id);
+        } catch (e) { inconsistencies.visits.push({ id: v.id, erro: (e as Error).message }); }
       }
 
-      // Classificação Final
-      let classificacao_risco = 'Sem Risco';
-      if (pontuacao_risco >= 5 && pontuacao_risco <= 6) {
-        classificacao_risco = 'R1 - Risco menor';
-      } else if (pontuacao_risco >= 7 && pontuacao_risco <= 8) {
-        classificacao_risco = 'R2 - Risco médio';
-      } else if (pontuacao_risco >= 9) {
-        classificacao_risco = 'R3 - Risco máximo';
-      }
-
-      // 5. Persistência
-      let savedFamily: Family;
-      if (existingFamily) {
-        // Atualiza família existente
-        existingFamily.renda_familiar = family.renda_familiar;
-        existingFamily.numero_membros = family.numero_membros;
-        if (family.reside_desde) {
-          existingFamily.reside_desde = new Date(family.reside_desde);
-        }
-        existingFamily.pontuacao_risco = pontuacao_risco;
-        existingFamily.classificacao_risco = classificacao_risco;
-        if (family.household_id) {
-          existingFamily.household = { id: family.household_id } as any;
-        }
-
-        savedFamily = await queryRunner.manager.save(Family, existingFamily);
-      } else {
-        // Cria nova família
-        const { household_id, ...familyData } = family;
-        const newFamily = queryRunner.manager.create(Family, {
-          ...familyData,
-          reside_desde: new Date(family.reside_desde),
-          pontuacao_risco,
-          classificacao_risco,
-          ...(household_id ? { household: { id: household_id } as any } : {}),
-        });
-        savedFamily = await queryRunner.manager.save(Family, newFamily);
-      }
-
-      // Deletar os indivíduos antigos dependentes desta família para garantir um "override" limpo do snapshot offline (opcional, ajustável sob demanda de negócio)
-      if (existingFamily) {
-        await queryRunner.manager.delete(Individual, {
-          family: { id: savedFamily.id },
-        });
-      }
-
-      // Salva os novos indivíduos
-      const newIndividuals = individuals.map((ind) => {
-        return queryRunner.manager.create(Individual, {
-          ...ind,
-          family: savedFamily,
-        });
-      });
-
-      await queryRunner.manager.save(Individual, newIndividuals);
-
-      // Commit da transação em caso de sucesso total
       await queryRunner.commitTransaction();
-
-      // O fluxo de salvamento já ocorreu no banco de destino oficial da aplicação.
-
-      return {
-        message: 'Sincronização realizada com sucesso (Offline e Online)',
-        pontuacao_risco,
-        classificacao_risco,
-        familyId: savedFamily.id,
-        individualsCount: newIndividuals.length,
-      };
+      return { sucesso: true, message: 'Lote processado.', salvos: savedIds, inconsistencias: inconsistencies };
     } catch (error) {
-      // Rollback da transação em caso de qualquer erro
       await queryRunner.rollbackTransaction();
-
-      if (error instanceof ConflictException) {
-        throw error; // Re-throw the known validation exception
-      }
-
-      // Logger.error('Sync error', error.stack);
-      throw new InternalServerErrorException(
-        `Falha ao sincronizar dados: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw new InternalServerErrorException(`Falha: ${(error as Error).message}`);
     } finally {
-      // Libertação do QueryRunner em todos os casos
       await queryRunner.release();
     }
+  }
+
+  async exportProcessedBatchToEsus(userId: number) {
+    const user = await this.dataSource.manager.findOne(User, { where: { id: userId } });
+    if (!user || !user.cns_profissional || !user.cnes_estabelecimento) throw new BadRequestException('Credenciais e-SUS incompletas.');
+    const individuals = await this.dataSource.manager.find(Individual, { where: { family: { household: { createdBy: { id: userId } } } }, relations: ['family', 'family.household', 'healthConditions'] });
+    const results: any[] = [];
+    for (const ind of individuals) { const cdsData = await this.esusThriftService.mapIndividualToCDS(ind, user); results.push(cdsData); }
+    const binary = await this.esusThriftService.serializeBatchToThrift(results);
+    return { success: true, filename: `CDS_LOTE_${userId}_${Date.now()}.esus`, size: binary.length, data: binary.toString('base64') };
   }
 }
