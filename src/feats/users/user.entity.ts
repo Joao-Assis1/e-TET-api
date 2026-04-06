@@ -1,13 +1,12 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum UserRole {
   ADMIN = 'admin',
   GESTOR = 'gestor',
   PROFISSIONAL = 'profissional',
 }
-
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserDto {
   @ApiProperty({ description: 'Nome de usuário único', example: 'acs_jose' })
@@ -25,29 +24,24 @@ export class CreateUserDto {
   @IsEnum(UserRole)
   role?: UserRole;
 
-  @ApiPropertyOptional({ description: 'Cartão Nacional de Saúde', example: '209384756100005' })
+  @ApiPropertyOptional({ description: 'Cartão Nacional de Saúde (CNS)', example: '209384756100005' })
   @IsOptional()
   @IsString()
-  cns?: string;
+  cns_profissional?: string;
 
-  @ApiPropertyOptional({ description: 'Código do Estabelecimento de Saúde', example: '7654321' })
+  @ApiPropertyOptional({ description: 'CNES da Unidade Básica de Saúde', example: '7654321' })
   @IsOptional()
   @IsString()
-  cne?: string;
+  cnes_estabelecimento?: string;
+
+  @ApiPropertyOptional({ description: 'Código INE da Equipe de Saúde', example: '0000123456' })
+  @IsOptional()
+  @IsString()
+  ine_equipe?: string;
 }
 
 @Entity('users')
 export class User {
-  constructor(userDto?: CreateUserDto) {
-    if (userDto) {
-      this.usuario = userDto.usuario;
-      this.senha = userDto.senha;
-      this.role = userDto.role ?? UserRole.PROFISSIONAL;
-      this.cns = userDto.cns ?? null;
-      this.cne = userDto.cne ?? null;
-    }
-  }
-
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -61,8 +55,22 @@ export class User {
   role: string;
 
   @Column({ type: 'varchar', nullable: true })
-  cns: string | null;
+  cns_profissional: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  cne: string | null;
+  cnes_estabelecimento: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  ine_equipe: string | null;
+
+  constructor(userDto?: CreateUserDto) {
+    if (userDto) {
+      this.usuario = userDto.usuario;
+      this.senha = userDto.senha;
+      this.role = userDto.role ?? UserRole.PROFISSIONAL;
+      this.cns_profissional = userDto.cns_profissional ?? null;
+      this.cnes_estabelecimento = userDto.cnes_estabelecimento ?? null;
+      this.ine_equipe = userDto.ine_equipe ?? null;
+    }
+  }
 }
