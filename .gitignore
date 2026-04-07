@@ -90,3 +90,4 @@ src/feats/esus-export/esus-export.controller.spec.ts
 src/feats/esus-export
 bootstrap-user.js
 src/feats/sync/esus-thrift.service.ts
+METODOLOGIA.md
