@@ -15,6 +15,7 @@ describe('UsersService', () => {
 
   const mockJwtService = {
     verify: jest.fn(),
+    verifyAsync: jest.fn(),
     sign: jest.fn(),
   };
 
@@ -88,7 +89,7 @@ describe('UsersService', () => {
 
   it('should verify a valid token', async () => {
     const payload = { id: 1, usuario: 'admin' };
-    mockJwtService.verify.mockReturnValue(payload);
+    mockJwtService.verifyAsync.mockResolvedValue(payload);
 
     const result = await service.verifyUserToken('valid-token');
 
@@ -96,7 +97,7 @@ describe('UsersService', () => {
   });
 
   it('should throw UnauthorizedException for invalid token', async () => {
-    mockJwtService.verify.mockImplementation(() => {
+    mockJwtService.verifyAsync.mockImplementation(() => {
       throw new Error('invalid');
     });
 

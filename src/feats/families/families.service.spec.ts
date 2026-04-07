@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { FamiliesService } from './families.service';
-import { Family } from './family.entity';
+import { Family, FamilyIncome, FamilyRisk, FamilyStatus } from './family.entity';
 import { DataSource } from 'typeorm';
 
 describe('FamiliesService', () => {
@@ -79,10 +79,12 @@ describe('FamiliesService', () => {
   it('should create a family', async () => {
     const dto = {
       numero_prontuario: '001',
-      renda_familiar: 1500,
-      numero_membros: 3,
-      reside_desde: '2023-01-01',
+      renda_familiar: FamilyIncome.DE_1_A_2_SM,
+      membros_declarados: 3,
+      reside_desde: '01/2023',
       household_id: 'household-uuid',
+      status_mudanca: FamilyStatus.RESIDENTE,
+      classificacao_risco: FamilyRisk.R1,
     };
     mockFamilyRepository.save.mockImplementation((family) =>
       Promise.resolve({

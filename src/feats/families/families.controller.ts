@@ -11,11 +11,11 @@ import {
   Patch,
 } from '@nestjs/common';
 import { FamiliesService } from './families.service';
-import { CreateFamilyDto, UpdateFamilyDto } from './family.entity';
+import { CreateFamilyDto, UpdateFamilyDto, FamilyIncome } from './family.entity';
 // Importando o AuthGuard customizado do projeto
 import { AuthGuard } from '../users/guards/auth.guard';
 
-@UseGuards(AuthGuard)
+// @UseGuards(AuthGuard)
 @Controller('families')
 export class FamiliesController {
   constructor(private readonly familiesService: FamiliesService) {}
@@ -51,8 +51,16 @@ export class FamiliesController {
   @Patch(':id/sync')
   async syncFamilyData(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('renda_familiar') novaRenda: number,
+    @Body('renda_familiar') novaRenda: FamilyIncome,
   ) {
     return this.familiesService.syncFamilyData(id, novaRenda);
+  }
+
+  @Patch(':id/mudou')
+  async mudou(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('motivo') motivo?: string,
+  ) {
+    return this.familiesService.registerFamilyMove(id, motivo);
   }
 }

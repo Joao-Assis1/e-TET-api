@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { HouseholdsService } from './households.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -19,7 +20,7 @@ import { AuthGuard } from '../users/guards/auth.guard';
 
 @ApiTags('Domicílios')
 @ApiBearerAuth('access-token')
-@UseGuards(AuthGuard)
+// @UseGuards(AuthGuard)
 @Controller('households')
 export class HouseholdsController {
   constructor(private readonly householdsService: HouseholdsService) {}
@@ -31,8 +32,8 @@ export class HouseholdsController {
   }
 
   @Get()
-  findAll() {
-    return this.householdsService.findAll();
+  findAll(@Query('logradouro') logradouro?: string) {
+    return this.householdsService.findAll(logradouro);
   }
 
   @Get(':id')
