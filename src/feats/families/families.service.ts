@@ -55,17 +55,20 @@ export class FamiliesService {
   async update(id: string, updateFamilyDto: UpdateFamilyDto): Promise<Family> {
     const family = await this.findOne(id);
     const { household_id, ...rest } = updateFamilyDto;
-    const updatedFamily = new Family({
-      ...family,
-      ...rest,
-      household: household_id
-        ? ({ id: household_id } as any)
-        : (household_id === null ? null : family.household),
-      reside_desde: updateFamilyDto.reside_desde ?? family.reside_desde,
-    });
+
+    // Muta o objeto gerenciado pelo TypeORM — garante UPDATE ao invés de INSERT
+    Object.assign(family, rest);
+
+    if (household_id !== undefined) {
+      family.household = household_id ? ({ id: household_id } as any) : null;
+    }
+
+    if (updateFamilyDto.reside_desde !== undefined) {
+      family.reside_desde = updateFamilyDto.reside_desde;
+    }
 
     try {
-      return await this.familyRepository.save(updatedFamily);
+      return await this.familyRepository.save(family);
     } catch (error) {
       if (
         error.code === SQLITE_UNIQUE_VIOLATION_CODE ||

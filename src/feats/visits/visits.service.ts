@@ -74,8 +74,21 @@ export class VisitsService {
     return this.visitsRepository.save(visit);
   }
 
-  findAll(): Promise<Visit[]> {
-    return this.visitsRepository.find({ relations: ['household', 'family', 'individual'] });
+  async findAll(options?: {
+    householdId?: string;
+    familyId?: string;
+    individualId?: string;
+  }): Promise<Visit[]> {
+    const where: any = {};
+    if (options?.householdId) where.household = { id: options.householdId };
+    if (options?.familyId) where.family = { id: options.familyId };
+    if (options?.individualId) where.individual = { id: options.individualId };
+
+    return this.visitsRepository.find({
+      where,
+      relations: ['household', 'family', 'individual'],
+      order: { created_at: 'DESC' },
+    });
   }
 
   findOne(id: string): Promise<Visit | null> {
