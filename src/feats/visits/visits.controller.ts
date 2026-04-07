@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { VisitsService } from './visits.service';
 import { CreateVisitDto, UpdateVisitDto } from './visit.entity';
@@ -23,8 +24,12 @@ export class VisitsController {
   }
 
   @Get()
-  findAll() {
-    return this.visitsService.findAll();
+  findAll(
+    @Query('household_id') householdId?: string,
+    @Query('family_id') familyId?: string,
+    @Query('individual_id') individualId?: string,
+  ) {
+    return this.visitsService.findAll({ householdId, familyId, individualId });
   }
 
   @Get(':id')
