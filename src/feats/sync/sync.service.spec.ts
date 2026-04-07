@@ -3,6 +3,15 @@ import { SyncService } from './sync.service';
 import { EsusThriftService } from './esus-thrift.service';
 import { DataSource } from 'typeorm';
 import { SyncBatchPayloadDto } from './sync.dto';
+import {
+  HousingSituation,
+  HouseholdLocation,
+  HouseholdType,
+  ConstructionMaterial,
+  WaterSupply,
+  WaterTreatment,
+  SewageDisposal,
+} from '../households/household.entity';
 
 describe('SyncService', () => {
   let service: SyncService;
@@ -75,7 +84,7 @@ describe('SyncService', () => {
   it('should process batch sync with household', async () => {
     const payload = getBaseSyncPayload();
     payload.households = [{ 
-      id: 'house-id', 
+      id: 'b39e6a0d-debd-4a33-9118-2e3eb8c3f58a', 
       logradouro: 'Rua Principal', 
       numero: '123', 
       bairro: 'Centro',
@@ -89,13 +98,15 @@ describe('SyncService', () => {
       abastecimento_agua: WaterSupply.REDE_ENCANADA,
       agua_consumo: WaterTreatment.FILTRACAO,
       escoamento_banheiro: SewageDisposal.REDE_COLETORA,
+      energia_eletrica: true,
+      destino_lixo: undefined,
       possui_animais: false 
     }];
     
     const result = await service.processBatchSync(payload, 1);
 
     expect(result.sucesso).toBe(true);
-    expect(result.salvos.households).toContain('house-id');
+    expect(result.salvos.households).toContain('b39e6a0d-debd-4a33-9118-2e3eb8c3f58a');
   });
 
   it('should rollback and throw error on severe failure', async () => {
@@ -103,7 +114,7 @@ describe('SyncService', () => {
     
     const payload = getBaseSyncPayload();
     
-    await expect(service.processBatchSync(payload, 1)).rejects.toThrow('Falha abissal');
+    await expect(service.processBatchSync(payload, 1)).rejects.toThrow('Falha: Critical DB error');
     expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
   });
 });
