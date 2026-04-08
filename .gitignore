@@ -91,3 +91,5 @@ src/feats/esus-export
 bootstrap-user.js
 src/feats/sync/esus-thrift.service.ts
 METODOLOGIA.md
+wipe-and-seed.ts
+.gitignore
