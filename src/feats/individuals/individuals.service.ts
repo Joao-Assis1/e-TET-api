@@ -38,7 +38,9 @@ export class IndividualsService {
 
     const newIndividual = new Individual({
       ...individualData,
+      family_id: family.id,
       family,
+      household_id: family.household_id || (family.household && family.household.id) || null,
       data_nascimento: new Date(createIndividualDto.data_nascimento),
     });
 
@@ -109,7 +111,9 @@ export class IndividualsService {
 
     Object.assign(individual, {
       ...updateData,
+      family_id: family.id,
       family,
+      household_id: family.household_id || (family.household && family.household.id) || null,
       ...(updateIndividualDto.data_nascimento && {
         data_nascimento: new Date(updateIndividualDto.data_nascimento),
       }),
