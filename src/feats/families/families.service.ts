@@ -25,6 +25,7 @@ export class FamiliesService {
       const family = new Family({
         ...rest,
         reside_desde: createFamilyDto.reside_desde,
+        household_id: household_id || null, // Garante que o ID direto seja salvo
         household: household_id ? ({ id: household_id } as any) : null,
       });
       return await this.familyRepository.save(family);
@@ -60,6 +61,7 @@ export class FamiliesService {
     Object.assign(family, rest);
 
     if (household_id !== undefined) {
+      family.household_id = household_id || null;
       family.household = household_id ? ({ id: household_id } as any) : null;
     }
 

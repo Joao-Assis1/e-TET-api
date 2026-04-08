@@ -88,6 +88,9 @@ export class Family {
   @Column({ type: 'simple-json', nullable: true })
   historico_domicilios: string[];
 
+  @Column({ name: 'household_id', type: 'uuid', nullable: true })
+  household_id: string | null;
+
   @ManyToOne(() => Household, (household) => household.families, {
     nullable: true,
     onDelete: 'SET NULL',
