@@ -143,8 +143,8 @@ export class Household {
   @Column({ type: 'boolean', default: false })
   recusa_cadastro: boolean;
 
-  @Column({ type: 'timestamp', nullable: true })
-  data_ultima_visita: Date | null;
+  @Column({ nullable: true })
+  data_ultima_visita: Date;
 
   @Column({
     type: 'varchar',
