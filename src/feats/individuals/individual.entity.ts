@@ -27,6 +27,7 @@ import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PartialType } from '@nestjs/mapped-types';
 import { Family } from '../families/family.entity';
+import { Household } from '../households/household.entity';
 
 // --- ENUMS CDS ---
 
@@ -134,9 +135,19 @@ export class Individual {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'family_id', type: 'uuid' })
+  family_id: string;
+
   @ManyToOne(() => Family, { nullable: false })
   @JoinColumn({ name: 'family_id' })
   family: Family;
+
+  @Column({ name: 'household_id', type: 'uuid', nullable: true })
+  household_id: string | null;
+
+  @ManyToOne(() => Household, { nullable: true })
+  @JoinColumn({ name: 'household_id' })
+  household: Household | null;
 
   // Bloco 1: Identificação Básica
   @Column({ default: false })
