@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SyncService } from './sync.service';
-import { EsusThriftService } from './esus-thrift.service';
+import { RiskCalculatorService } from '../families/services/risk-calculator.service';
 import { DataSource } from 'typeorm';
 import { SyncBatchPayloadDto } from './sync.dto';
 import {
@@ -25,10 +25,22 @@ describe('SyncService', () => {
       rollbackTransaction: jest.fn(),
       release: jest.fn(),
       manager: {
-        findOne: jest.fn().mockResolvedValue({ id: 1, cns_profissional: '123', cnes_estabelecimento: '456' }),
+        findOne: jest.fn().mockImplementation((entity, options) => {
+          // If we want to simulate returning an existing record
+          if (options && options.where && options.where.id === 'deleted-123') {
+            return Promise.resolve({ id: 'deleted-123', deletedAt: new Date() });
+          }
+          if (entity.name === 'User') {
+            return Promise.resolve({ id: 1, cns_profissional: '123', cnes_estabelecimento: '456' });
+          }
+          if (options && options.where && options.where.id === 'exist') {
+            return Promise.resolve({ id: 'exist' });
+          }
+          return Promise.resolve(null);
+        }),
         save: jest
           .fn()
-          .mockImplementation((_entity, data) => ({ id: 'uuid-123', ...data })),
+          .mockImplementation((_entity, data) => ({ id: data.id || 'uuid-123', ...data })),
         create: jest.fn().mockImplementation((_entity, data) => data),
         merge: jest.fn().mockImplementation((_entity, orig, data) => ({ ...orig, ...data })),
         find: jest.fn().mockResolvedValue([]),
@@ -40,9 +52,8 @@ describe('SyncService', () => {
       manager: mockQueryRunner.manager,
     };
 
-    const mockEsusThriftService = {
-      mapIndividualToCDS: jest.fn().mockResolvedValue({}),
-      serializeBatchToThrift: jest.fn().mockResolvedValue(Buffer.from('')),
+    const mockRiskCalculatorService = {
+      calculateScoreAndClass: jest.fn().mockReturnValue({ finalScore: 5, riskClass: 'R2' }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -53,8 +64,8 @@ describe('SyncService', () => {
           useValue: mockDataSource,
         },
         {
-          provide: EsusThriftService,
-          useValue: mockEsusThriftService,
+          provide: RiskCalculatorService,
+          useValue: mockRiskCalculatorService,
         },
       ],
     }).compile();
@@ -107,6 +118,30 @@ describe('SyncService', () => {
 
     expect(result.sucesso).toBe(true);
     expect(result.salvos.households).toContain('b39e6a0d-debd-4a33-9118-2e3eb8c3f58a');
+    
+    // Check if findOne uses { withDeleted: true }
+    expect(mockQueryRunner.manager.findOne).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({
+        where: { id: 'b39e6a0d-debd-4a33-9118-2e3eb8c3f58a' },
+        withDeleted: true
+      })
+    );
+  });
+  
+  it('should process sync with family and mock risk score properly', async () => {
+    const payload = getBaseSyncPayload();
+    payload.families = [{ 
+      id: 'b39e6a0d-debd-4a33-9118-2e3eb8c3f58b', 
+      numero_prontuario: '12345',
+      membros_declarados: 3,
+      saneamento_inadequado: true
+    }];
+    
+    const result = await service.processBatchSync(payload, 1);
+
+    expect(result.sucesso).toBe(true);
+    expect(result.salvos.families).toContain('b39e6a0d-debd-4a33-9118-2e3eb8c3f58b');
   });
 
   it('should rollback and throw error on severe failure', async () => {

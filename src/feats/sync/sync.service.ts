@@ -4,7 +4,7 @@ import {
   Logger,
   BadRequestException,
 } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, DeepPartial } from 'typeorm';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 
@@ -15,13 +15,14 @@ import {
   SyncIndividualDataDto,
   SyncVisitDataDto,
 } from './sync.dto';
-// import { EsusThriftService } from './esus-thrift.service';
 import { Household } from '../households/household.entity';
 import { Family } from '../families/family.entity';
 import { Individual, JobStatus } from '../individuals/individual.entity';
 import { IndividualHealth } from '../individuals/individual-health.entity';
 import { Visit } from '../visits/visit.entity';
 import { User } from '../users/user.entity';
+import { RiskCalculatorService } from '../families/services/risk-calculator.service';
+import { CreateRiskAssessmentDto } from '../families/dto/create-risk.dto';
 
 @Injectable()
 export class SyncService {
@@ -29,7 +30,7 @@ export class SyncService {
 
   constructor(
     private readonly dataSource: DataSource,
-    // private readonly esusThriftService: EsusThriftService,
+    private readonly riskCalculatorService: RiskCalculatorService,
   ) {}
 
   async getInitialSyncData(userId: number) {
@@ -86,13 +87,13 @@ export class SyncService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
-    const inconsistencies: any = {
+    const inconsistencies: Record<string, any[]> = {
       households: [],
       families: [],
       individuals: [],
       visits: [],
     };
-    const savedIds: any = {
+    const savedIds: Record<string, string[]> = {
       households: [],
       families: [],
       individuals: [],
@@ -127,8 +128,9 @@ export class SyncService {
         try {
           const { id, ...data } = h;
           let hdEntity = id
-            ? await queryRunner.manager.findOne(Household, { where: { id } })
+            ? await queryRunner.manager.findOne(Household, { where: { id }, withDeleted: true })
             : null;
+            
           const baseData: any = {
             ...data,
             id: id || undefined,
@@ -151,7 +153,7 @@ export class SyncService {
         }
       }
 
-      const individualsByFamily = new Map<string, any[]>();
+      const individualsByFamily = new Map<string, SyncIndividualDataDto[]>();
       for (const ind of individuals) {
         if (ind.family_id) {
           if (!individualsByFamily.has(ind.family_id)) {
@@ -178,13 +180,30 @@ export class SyncService {
         }
 
         const inds = (f.id ? individualsByFamily.get(f.id) : []) || [];
-        let r = 0;
+        
+        const riskPayload: CreateRiskAssessmentDto = {
+          bedriddenCount: 0,
+          physicalDisabilityCount: 0,
+          mentalDisabilityCount: 0,
+          severeMalnutritionCount: 0,
+          drugAddictionCount: 0,
+          unemployedCount: 0,
+          illiterateCount: 0,
+          under6MonthsCount: 0,
+          over70YearsCount: 0,
+          hypertensionCount: 0,
+          diabetesCount: 0,
+          poorSanitation: f.saneamento_inadequado || false,
+          roomsCount: 1 // Default to 1 to avoid division by zero during sync
+        };
+
         for (const ind of inds) {
           const hc = ind.healthConditions || {};
-          if (hc.acamado_domiciliado) r += 3;
-          if (ind.possui_deficiencia) r += 3;
-          if (hc.uso_alcool || hc.uso_outras_drogas || hc.fumante) r += 2;
-          if (ind.situacao_mercado_trabalho === JobStatus.DESEMPREGADO) r += 2;
+          if (hc.acamado_domiciliado) riskPayload.bedriddenCount++;
+          if (ind.possui_deficiencia) riskPayload.physicalDisabilityCount++;
+          if (hc.uso_alcool || hc.uso_outras_drogas || hc.fumante) riskPayload.drugAddictionCount++;
+          if (ind.situacao_mercado_trabalho === JobStatus.DESEMPREGADO) riskPayload.unemployedCount++;
+          
           if (ind.data_nascimento) {
             const birthDate = new Date(ind.data_nascimento);
             const ageMonths =
@@ -194,28 +213,41 @@ export class SyncService {
               new Date(Date.now() - birthDate.getTime()).getUTCFullYear() -
                 1970,
             );
-            if (ageMonths < 6) r += 1;
-            if (ageYears > 70) r += 1;
+            if (ageMonths < 6) riskPayload.under6MonthsCount++;
+            if (ageYears > 70) riskPayload.over70YearsCount++;
           }
-          if (hc.hipertensao_arterial) r += 1;
-          if (hc.diabetes) r += 1;
+          if (hc.hipertensao_arterial) riskPayload.hypertensionCount++;
+          if (hc.diabetes) riskPayload.diabetesCount++;
         }
-        if (f.saneamento_inadequado) r += 3;
 
+        const membersCount = f.membros_declarados || 0;
         let classificacao_risco = 'Sem Risco';
-        if (r >= 9) classificacao_risco = 'R3 - Risco máximo';
-        else if (r >= 7) classificacao_risco = 'R2 - Risco médio';
-        else if (r >= 5) classificacao_risco = 'R1 - Risco menor';
+        let pontuacao_risco = 0;
+        
+        try {
+          const riskResult = this.riskCalculatorService.calculateScoreAndClass(riskPayload, membersCount);
+          pontuacao_risco = riskResult.finalScore;
+          classificacao_risco = riskResult.riskClass;
+        } catch (error) {
+          // Captures anti-fraud exception but logs as sync inconsistency, does not halt completely
+          if (error instanceof BadRequestException) {
+             inconsistencies.families.push({ id: f.id, erro: `Anti-fraude de Risco: ${error.message}` });
+             // We can proceed saving the family without risk calculated
+          } else {
+             throw error;
+          }
+        }
 
         try {
           const { id, household_id, ...data } = f;
           let fEntity = id
-            ? await queryRunner.manager.findOne(Family, { where: { id } })
+            ? await queryRunner.manager.findOne(Family, { where: { id }, withDeleted: true })
             : null;
+            
           const baseData: any = {
             ...data,
             id: id || undefined,
-            pontuacao_risco: r,
+            pontuacao_risco,
             classificacao_risco,
             household: household_id ? { id: household_id } : undefined,
             reside_desde: data.reside_desde
@@ -257,8 +289,10 @@ export class SyncService {
             ? await queryRunner.manager.findOne(Individual, {
                 where: { id },
                 relations: ['healthConditions'],
+                withDeleted: true
               })
             : null;
+            
           const base: any = {
             ...data,
             id: id || undefined,
@@ -308,8 +342,9 @@ export class SyncService {
         try {
           const { id, household_id, family_id, individual_id, ...data } = v;
           let vEnt = id
-            ? await queryRunner.manager.findOne(Visit, { where: { id } })
+            ? await queryRunner.manager.findOne(Visit, { where: { id }, withDeleted: true })
             : null;
+            
           const base: any = {
             ...data,
             id: id || undefined,
@@ -345,31 +380,4 @@ export class SyncService {
       await queryRunner.release();
     }
   }
-
-  // async exportProcessedBatchToEsus(userId: number) {
-  //   const user = await this.dataSource.manager.findOne(User, {
-  //     where: { id: userId },
-  //   });
-  //   if (!user || !user.cns_profissional || !user.cnes_estabelecimento)
-  //     throw new BadRequestException('Credenciais e-SUS incompletas.');
-  //   const individuals = await this.dataSource.manager.find(Individual, {
-  //     where: { family: { household: { createdBy: { id: userId } } } },
-  //     relations: ['family', 'family.household', 'healthConditions'],
-  //   });
-  // const results: any[] = [];
-  // for (const ind of individuals) {
-  //   const cdsData = await this.esusThriftService.mapIndividualToCDS(
-  //     ind,
-  //     user,
-  //   );
-  //   results.push(cdsData);
-  // }
-  // const binary = await this.esusThriftService.serializeBatchToThrift(results);
-  // return {
-  //   success: true,
-  //   filename: `CDS_LOTE_${userId}_${Date.now()}.esus`,
-  //   size: binary.length,
-  //   data: binary.toString('base64'),
-  // };
 }
-// }
