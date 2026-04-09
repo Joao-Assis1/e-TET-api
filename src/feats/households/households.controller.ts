@@ -17,10 +17,13 @@ import {
   UpdateHouseholdDto,
 } from './household.entity';
 import { AuthGuard } from '../users/guards/auth.guard';
+import { MicroareaGuard } from '../users/guards/microarea.guard';
+import { RequireMicroareaMatch } from '../users/decorators/microarea.decorator';
 
 @ApiTags('Domicílios')
 @ApiBearerAuth('access-token')
-// @UseGuards(AuthGuard)
+@UseGuards(AuthGuard)
+
 @Controller('households')
 export class HouseholdsController {
   constructor(private readonly householdsService: HouseholdsService) {}
@@ -37,11 +40,15 @@ export class HouseholdsController {
   }
 
   @Get(':id')
+  @UseGuards(MicroareaGuard)
+  @RequireMicroareaMatch('Household')
   findOne(@Param('id') id: string) {
     return this.householdsService.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(MicroareaGuard)
+  @RequireMicroareaMatch('Household')
   update(
     @Param('id') id: string,
     @Body() updateHouseholdDto: UpdateHouseholdDto,
@@ -50,6 +57,8 @@ export class HouseholdsController {
   }
 
   @Delete(':id')
+  @UseGuards(MicroareaGuard)
+  @RequireMicroareaMatch('Household')
   remove(@Param('id') id: string) {
     return this.householdsService.remove(id);
   }
