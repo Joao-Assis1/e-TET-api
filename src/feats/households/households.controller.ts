@@ -23,7 +23,6 @@ import { RequireMicroareaMatch } from '../users/decorators/microarea.decorator';
 @ApiTags('Domicílios')
 @ApiBearerAuth('access-token')
 @UseGuards(AuthGuard)
-
 @Controller('households')
 export class HouseholdsController {
   constructor(private readonly householdsService: HouseholdsService) {}
