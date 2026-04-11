@@ -83,6 +83,19 @@ export class IndividualHealth {
   @Column({ type: 'varchar', nullable: true })
   refeicoes_dia: MealsPerDay | null;
 
+  // Novos campos Sync V2
+  @Column({ default: false })
+  teve_internacao_12_meses: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  causa_internacao: string;
+
+  @Column({ default: false })
+  usa_plantas_medicinais: boolean;
+
+  @Column({ default: false })
+  abaixo_do_peso: boolean;
+
   @OneToOne(() => Individual, (individual) => individual.healthConditions)
   individual: Individual;
 }

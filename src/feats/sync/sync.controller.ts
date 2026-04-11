@@ -35,10 +35,4 @@ export class SyncController {
   async syncBatch(@Body() payload: SyncBatchPayloadDto, @Request() req: any) {
     return this.syncService.processBatchSync(payload, req.user.sub);
   }
-
-  //   @Post('batch/export')
-  //   @ApiOperation({ summary: 'Exportar dados processados para o formato CDS do e-SUS (Apache Thrift)' })
-  //   async exportToEsus(@Request() req: any) {
-  //     return this.syncService.exportProcessedBatchToEsus(req.user.sub);
-  //   }
 }

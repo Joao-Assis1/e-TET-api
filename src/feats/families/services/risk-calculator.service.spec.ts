@@ -14,6 +14,7 @@ describe('RiskCalculatorService', () => {
   beforeEach(async () => {
     mockFamiliesService = {
       findOne: jest.fn().mockResolvedValue({ id: 'uuid-1', membros_declarados: 4 }),
+      update: jest.fn().mockResolvedValue(true),
     };
 
     mockRiskRepository = {
@@ -50,7 +51,7 @@ describe('RiskCalculatorService', () => {
       over70YearsCount: 0,
       hypertensionCount: 1, // 1 point
       diabetesCount: 0,
-      poorSanitation: false, // 0 points
+      basicSanitation: true, // 0 points
       roomsCount: 4, // 4 members / 4 rooms = 1 => 1 point
     };
 
@@ -75,7 +76,7 @@ describe('RiskCalculatorService', () => {
       over70YearsCount: 0,
       hypertensionCount: 0,
       diabetesCount: 0,
-      poorSanitation: true, // 3 points
+      basicSanitation: false, // 3 points
       roomsCount: 5, // 4 members / 5 rooms < 1 => 0 points
     };
 
@@ -99,7 +100,7 @@ describe('RiskCalculatorService', () => {
       over70YearsCount: 0,
       hypertensionCount: 0,
       diabetesCount: 0,
-      poorSanitation: false,
+      basicSanitation: true,
       roomsCount: 4,
     };
     // Sum = 2+2+1 = 5. Members = 4.

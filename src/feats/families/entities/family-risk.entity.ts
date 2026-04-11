@@ -10,7 +10,7 @@ export class FamilyRiskStratification {
   @JoinColumn({ name: 'familyId' })
   family: Family;
 
-  @Column()
+  @Column({ name: 'familyId' })
   familyId: string;
 
   @Column({ type: 'int', default: 0 }) bedriddenCount: number;
@@ -25,11 +25,11 @@ export class FamilyRiskStratification {
   @Column({ type: 'int', default: 0 }) hypertensionCount: number;
   @Column({ type: 'int', default: 0 }) diabetesCount: number;
 
-  @Column({ type: 'boolean', default: false }) poorSanitation: boolean;
+  @Column({ type: 'boolean', default: true }) basicSanitation: boolean;
   @Column({ type: 'int', default: 1 }) roomsCount: number;
 
-  @Column({ type: 'int' }) finalScore: number;
-  @Column({ type: 'varchar' }) riskClass: string;
+  @Column({ type: 'int', nullable: true }) finalScore: number;
+  @Column({ type: 'varchar', nullable: true }) riskClass: string;
 
   @Column() createdBy: string;
   @CreateDateColumn() createdAt: Date;
