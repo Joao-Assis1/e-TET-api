@@ -15,7 +15,7 @@ import { CreateFamilyDto, UpdateFamilyDto, FamilyIncome } from './family.entity'
 // Importando o AuthGuard customizado do projeto
 import { AuthGuard } from '../users/guards/auth.guard';
 
-// @UseGuards(AuthGuard)
+@UseGuards(AuthGuard)
 @Controller('families')
 export class FamiliesController {
   constructor(private readonly familiesService: FamiliesService) {}

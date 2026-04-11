@@ -15,7 +15,7 @@ import { CreateIndividualDto, UpdateIndividualDto } from './individual.entity';
 // Importação do AuthGuard customizado do projeto
 import { AuthGuard } from '../users/guards/auth.guard';
 
-// @UseGuards(AuthGuard)
+@UseGuards(AuthGuard)
 @Controller('individuals')
 export class IndividualsController {
   constructor(private readonly individualsService: IndividualsService) {}
