@@ -134,6 +134,50 @@ export class SyncIndividualDataDto {
   @IsString()
   nome_comunidade?: string;
 
+  @IsOptional()
+  @IsString()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  telefone_celular?: string;
+
+  @IsOptional()
+  @IsString()
+  nome_mae?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  nome_mae_desconhecido?: boolean;
+
+  @IsOptional()
+  @IsString()
+  nome_pai?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  nome_pai_desconhecido?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  frequenta_cuidador_tradicional?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  participa_grupo_comunitario?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  possui_plano_saude?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  pertence_povo_tradicional?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  usa_outras_praticas?: boolean;
+
   @Type(() => IndividualHealthDto)
   healthConditions: IndividualHealthDto;
 }

@@ -6,11 +6,11 @@ import {
   UseGuards,
   ParseUUIDPipe,
   Req,
+  Request,
 } from '@nestjs/common';
 import { CreateRiskAssessmentDto } from '../dto/create-risk.dto';
 import { RiskCalculatorService } from '../services/risk-calculator.service';
 import { AuthGuard } from '../../users/guards/auth.guard';
-import type { Request } from 'express';
 
 @Controller('families')
 @UseGuards(AuthGuard)
@@ -26,6 +26,10 @@ export class RiskStratificationController {
     const user: any = (req as any).user;
     const userId = user?.id || user?.sub || user?.usuario || 'system';
 
-    return this.riskCalculatorService.calculateFeatureRisk(familyId, payload, userId);
+    return this.riskCalculatorService.calculateFeatureRisk(
+      familyId,
+      payload,
+      userId,
+    );
   }
 }

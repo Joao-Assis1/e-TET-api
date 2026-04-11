@@ -56,7 +56,7 @@ export class RiskCalculatorService {
     const weight1 =
       ((payload.hypertensionCount || 0) * 1) +
       ((payload.diabetesCount || 0) * 1) +
-      (payload.poorSanitation ? 3 : 0);
+      (!payload.basicSanitation ? 3 : 0);
 
     // Room ratio
     const ratio = membersCount / payload.roomsCount;
@@ -85,8 +85,9 @@ export class RiskCalculatorService {
 
 
   async calculateFeatureRisk(familyId: string, payload: CreateRiskAssessmentDto, userId: string): Promise<FamilyRiskStratification> {
-    const family = await this.familiesService.findOne(familyId).catch(() => {
-      throw new NotFoundException('Família não localizada no sistema');
+    const family = await this.familiesService.findOne(familyId).catch((err) => {
+      console.error(`[RiskCalculatorService] Família ${familyId} não encontrada:`, err.message);
+      throw new NotFoundException(`Família [${familyId}] não localizada no sistema`);
     });
 
     const membersCount = family.membros_declarados || 0;
@@ -107,13 +108,28 @@ export class RiskCalculatorService {
     riskRecord.over70YearsCount = payload.over70YearsCount;
     riskRecord.hypertensionCount = payload.hypertensionCount;
     riskRecord.diabetesCount = payload.diabetesCount;
-    riskRecord.poorSanitation = payload.poorSanitation;
+    riskRecord.basicSanitation = payload.basicSanitation;
     riskRecord.roomsCount = payload.roomsCount;
     riskRecord.finalScore = finalScore;
     riskRecord.riskClass = riskClass;
     riskRecord.createdBy = userId;
 
-    await this.riskRepository.save(riskRecord);
-    return riskRecord;
+    try {
+      console.log('[RiskCalculatorService] Salvando registro de risco para família:', familyId);
+      const saved = await this.riskRepository.save(riskRecord);
+      
+      // Atualizar também o status na entidade Family para manter compatibilidade
+      await this.familiesService.update(familyId, {
+        pontuacao_risco: finalScore,
+        classificacao_risco: riskClass as any
+      });
+
+      return saved;
+    } catch (error) {
+      console.error('[RiskCalculatorService] ERRO CRÍTICO AO SALVAR RISCO:', error);
+      throw new InternalServerErrorException(
+        `Erro ao persistir estratificação: ${error.message}`
+      );
+    }
   }
 }

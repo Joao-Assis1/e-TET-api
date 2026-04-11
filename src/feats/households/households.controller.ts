@@ -62,4 +62,12 @@ export class HouseholdsController {
   remove(@Param('id') id: string) {
     return this.householdsService.remove(id);
   }
+
+  @Get(':id/individuals')
+  @UseGuards(MicroareaGuard)
+  @RequireMicroareaMatch('Household')
+  @ApiOperation({ summary: 'Listar todos os indivíduos de um domicílio (todas as famílias)' })
+  findIndividuals(@Param('id') id: string) {
+    return this.householdsService.findIndividuals(id);
+  }
 }

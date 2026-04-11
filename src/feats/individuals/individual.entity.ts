@@ -221,6 +221,40 @@ export class Individual {
   @Column({ type: 'varchar', nullable: true })
   nome_comunidade: string;
 
+  // Novos campos Sync V2
+  @Column({ type: 'varchar', nullable: true })
+  email: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  telefone_celular: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  nome_mae: string | null;
+
+  @Column({ default: false })
+  nome_mae_desconhecido: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  nome_pai: string | null;
+
+  @Column({ default: false })
+  nome_pai_desconhecido: boolean;
+
+  @Column({ default: false })
+  frequenta_cuidador_tradicional: boolean;
+
+  @Column({ default: false })
+  participa_grupo_comunitario: boolean;
+
+  @Column({ default: false })
+  possui_plano_saude: boolean;
+
+  @Column({ default: false })
+  pertence_povo_tradicional: boolean;
+
+  @Column({ default: false })
+  usa_outras_praticas: boolean;
+
   // Relacionamento OneToOne para as Condições de Saúde (Blocos 4 e 5)
   @OneToOne(() => IndividualHealth, (health) => health.individual, {
     cascade: true,
@@ -359,6 +393,26 @@ export class IndividualHealthDto {
   @IsOptional()
   @IsEnum(MealsPerDay)
   refeicoes_dia?: MealsPerDay;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  teve_internacao_12_meses?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  causa_internacao?: string;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  usa_plantas_medicinais?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  abaixo_do_peso?: boolean;
 }
 
 export class CreateIndividualDto {
@@ -467,6 +521,61 @@ export class CreateIndividualDto {
   @IsOptional()
   @IsString()
   nome_comunidade?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  telefone_celular?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  nome_mae?: string;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  nome_mae_desconhecido?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  nome_pai?: string;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  nome_pai_desconhecido?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  frequenta_cuidador_tradicional?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  participa_grupo_comunitario?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  possui_plano_saude?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  pertence_povo_tradicional?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  usa_outras_praticas?: boolean;
 
   @ApiProperty({ type: IndividualHealthDto })
   @ValidateIf((o) => !o.recusa_cadastro)
