@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import {
@@ -43,13 +47,17 @@ export class IndividualsService {
       createIndividualDto.cartao_sus,
     );
 
-    const { family_id, healthConditions, ...individualData } = createIndividualDto;
+    const { family_id, healthConditions, ...individualData } =
+      createIndividualDto;
 
     const newIndividual = new Individual({
       ...individualData,
       family_id: family.id,
       family,
-      household_id: family.household_id || (family.household && family.household.id) || null,
+      household_id:
+        family.household_id ||
+        (family.household && family.household.id) ||
+        null,
       data_nascimento: new Date(createIndividualDto.data_nascimento),
     });
 
@@ -115,7 +123,7 @@ export class IndividualsService {
         updateIndividualDto.is_responsavel,
         updateIndividualDto.cpf || individual.cpf,
         updateIndividualDto.cartao_sus || individual.cartao_sus,
-        individual.id
+        individual.id,
       );
     }
 
@@ -132,7 +140,10 @@ export class IndividualsService {
       ...updateData,
       family_id: family.id,
       family,
-      household_id: family.household_id || (family.household && family.household.id) || null,
+      household_id:
+        family.household_id ||
+        (family.household && family.household.id) ||
+        null,
       ...(updateIndividualDto.data_nascimento && {
         data_nascimento: new Date(updateIndividualDto.data_nascimento),
       }),
@@ -157,7 +168,7 @@ export class IndividualsService {
 
     individual.arquivado = true;
     individual.motivo_saida = motivo;
-    
+
     // Se era responsável, perde o status ao sair
     if (individual.is_responsavel) {
       individual.is_responsavel = false;
@@ -175,7 +186,7 @@ export class IndividualsService {
     isResponsavel: boolean,
     cpf?: string,
     cartaoSus?: string,
-    currentIndividualId?: string
+    currentIndividualId?: string,
   ) {
     if (!isResponsavel) return;
 
@@ -186,12 +197,12 @@ export class IndividualsService {
       );
     }
 
-    const whereClause: any = { 
-      family: { id: familyId }, 
-      is_responsavel: true, 
-      arquivado: false 
+    const whereClause: any = {
+      family: { id: familyId },
+      is_responsavel: true,
+      arquivado: false,
     };
-    
+
     // Na atualização, desconsidera o próprio registro sendo editado
     if (currentIndividualId) {
       whereClause.id = Not(currentIndividualId);

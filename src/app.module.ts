@@ -35,7 +35,15 @@ import { JwtModule } from '@nestjs/jwt';
           return {
             type: 'postgres',
             url: configService.get('DATABASE_URL'),
-            entities: [User, Family, Individual, IndividualHealth, Household, Visit, FamilyRiskStratification],
+            entities: [
+              User,
+              Family,
+              Individual,
+              IndividualHealth,
+              Household,
+              Visit,
+              FamilyRiskStratification,
+            ],
             synchronize: true,
             ssl: {
               rejectUnauthorized: false,
@@ -46,7 +54,15 @@ import { JwtModule } from '@nestjs/jwt';
         return {
           type: 'sqlite',
           database: 'database.sqlite',
-          entities: [User, Family, Individual, IndividualHealth, Household, Visit, FamilyRiskStratification],
+          entities: [
+            User,
+            Family,
+            Individual,
+            IndividualHealth,
+            Household,
+            Visit,
+            FamilyRiskStratification,
+          ],
           synchronize: true,
         };
       },

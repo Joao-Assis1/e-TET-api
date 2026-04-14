@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FamilyRiskStratification } from '../entities/family-risk.entity';
@@ -14,7 +19,10 @@ export class RiskCalculatorService {
     private readonly familiesService: FamiliesService,
   ) {}
 
-  public calculateScoreAndClass(payload: CreateRiskAssessmentDto, membersCount: number): { finalScore: number, riskClass: string } {
+  public calculateScoreAndClass(
+    payload: CreateRiskAssessmentDto,
+    membersCount: number,
+  ): { finalScore: number; riskClass: string } {
     // Anti-Fraude validation
     const totalSentinelas =
       (payload.bedriddenCount || 0) +
@@ -39,23 +47,23 @@ export class RiskCalculatorService {
 
     // Weight *3
     const weight3 =
-      ((payload.bedriddenCount || 0) * 3) +
-      ((payload.physicalDisabilityCount || 0) * 3) +
-      ((payload.mentalDisabilityCount || 0) * 3) +
-      ((payload.severeMalnutritionCount || 0) * 3);
+      (payload.bedriddenCount || 0) * 3 +
+      (payload.physicalDisabilityCount || 0) * 3 +
+      (payload.mentalDisabilityCount || 0) * 3 +
+      (payload.severeMalnutritionCount || 0) * 3;
 
     // Weight *2
     const weight2 =
-      ((payload.drugAddictionCount || 0) * 2) +
-      ((payload.unemployedCount || 0) * 2) +
-      ((payload.illiterateCount || 0) * 2) +
-      ((payload.under6MonthsCount || 0) * 2) +
-      ((payload.over70YearsCount || 0) * 2);
+      (payload.drugAddictionCount || 0) * 2 +
+      (payload.unemployedCount || 0) * 2 +
+      (payload.illiterateCount || 0) * 2 +
+      (payload.under6MonthsCount || 0) * 2 +
+      (payload.over70YearsCount || 0) * 2;
 
     // Weight *1
     const weight1 =
-      ((payload.hypertensionCount || 0) * 1) +
-      ((payload.diabetesCount || 0) * 1) +
+      (payload.hypertensionCount || 0) * 1 +
+      (payload.diabetesCount || 0) * 1 +
       (!payload.basicSanitation ? 3 : 0);
 
     // Room ratio
@@ -83,16 +91,27 @@ export class RiskCalculatorService {
     return { finalScore, riskClass };
   }
 
-
-  async calculateFeatureRisk(familyId: string, payload: CreateRiskAssessmentDto, userId: string): Promise<FamilyRiskStratification> {
+  async calculateFeatureRisk(
+    familyId: string,
+    payload: CreateRiskAssessmentDto,
+    userId: string,
+  ): Promise<FamilyRiskStratification> {
     const family = await this.familiesService.findOne(familyId).catch((err) => {
-      console.error(`[RiskCalculatorService] Família ${familyId} não encontrada:`, err.message);
-      throw new NotFoundException(`Família [${familyId}] não localizada no sistema`);
+      console.error(
+        `[RiskCalculatorService] Família ${familyId} não encontrada:`,
+        err.message,
+      );
+      throw new NotFoundException(
+        `Família [${familyId}] não localizada no sistema`,
+      );
     });
 
     const membersCount = family.membros_declarados || 0;
 
-    const { finalScore, riskClass } = this.calculateScoreAndClass(payload, membersCount);
+    const { finalScore, riskClass } = this.calculateScoreAndClass(
+      payload,
+      membersCount,
+    );
 
     const riskRecord = new FamilyRiskStratification();
     riskRecord.family = family;
@@ -115,20 +134,26 @@ export class RiskCalculatorService {
     riskRecord.createdBy = userId;
 
     try {
-      console.log('[RiskCalculatorService] Salvando registro de risco para família:', familyId);
+      console.log(
+        '[RiskCalculatorService] Salvando registro de risco para família:',
+        familyId,
+      );
       const saved = await this.riskRepository.save(riskRecord);
-      
+
       // Atualizar também o status na entidade Family para manter compatibilidade
       await this.familiesService.update(familyId, {
         pontuacao_risco: finalScore,
-        classificacao_risco: riskClass as any
+        classificacao_risco: riskClass as any,
       });
 
       return saved;
     } catch (error) {
-      console.error('[RiskCalculatorService] ERRO CRÍTICO AO SALVAR RISCO:', error);
+      console.error(
+        '[RiskCalculatorService] ERRO CRÍTICO AO SALVAR RISCO:',
+        error,
+      );
       throw new InternalServerErrorException(
-        `Erro ao persistir estratificação: ${error.message}`
+        `Erro ao persistir estratificação: ${error.message}`,
       );
     }
   }

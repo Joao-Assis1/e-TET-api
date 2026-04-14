@@ -12,10 +12,7 @@ import {
 } from '@nestjs/common';
 import { HouseholdsService } from './households.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import {
-  CreateHouseholdDto,
-  UpdateHouseholdDto,
-} from './household.entity';
+import { CreateHouseholdDto, UpdateHouseholdDto } from './household.entity';
 import { AuthGuard } from '../users/guards/auth.guard';
 import { MicroareaGuard } from '../users/guards/microarea.guard';
 import { RequireMicroareaMatch } from '../users/decorators/microarea.decorator';
@@ -65,7 +62,9 @@ export class HouseholdsController {
   @Get(':id/individuals')
   @UseGuards(MicroareaGuard)
   @RequireMicroareaMatch('Household')
-  @ApiOperation({ summary: 'Listar todos os indivíduos de um domicílio (todas as famílias)' })
+  @ApiOperation({
+    summary: 'Listar todos os indivíduos de um domicílio (todas as famílias)',
+  })
   findIndividuals(@Param('id') id: string) {
     return this.householdsService.findIndividuals(id);
   }

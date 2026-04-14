@@ -221,9 +221,6 @@ export class Household {
   @OneToMany(() => Family, (family) => family.household)
   families: Family[];
 
-  @Column({ type: 'varchar', nullable: true })
-  cns_profissional: string | null;
-
   @ManyToOne(() => User)
   @JoinColumn({ name: 'created_by_id' })
   createdBy: User;

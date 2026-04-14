@@ -63,7 +63,10 @@ describe('MicroareaGuard', () => {
 
   it('should allow if user has no microarea specific permission', async () => {
     mockReflector.get.mockReturnValue('Household');
-    const context = createMockContext({ name: 'Admin without microarea' }, { id: 'uuid-123' });
+    const context = createMockContext(
+      { name: 'Admin without microarea' },
+      { id: 'uuid-123' },
+    );
 
     expect(await guard.canActivate(context)).toBe(true);
   });
@@ -89,6 +92,8 @@ describe('MicroareaGuard', () => {
     mockDataSource.manager.findOne.mockResolvedValue({ microarea: '02' });
     const context = createMockContext({ microarea: '01' }, { id: 'uuid-123' });
 
-    await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 });

@@ -2,7 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { FamiliesService } from './families.service';
-import { Family, FamilyIncome, FamilyRisk, FamilyStatus } from './family.entity';
+import {
+  Family,
+  FamilyIncome,
+  FamilyRisk,
+  FamilyStatus,
+} from './family.entity';
 import { DataSource } from 'typeorm';
 
 describe('FamiliesService', () => {

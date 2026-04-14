@@ -11,7 +11,11 @@ import {
   Patch,
 } from '@nestjs/common';
 import { FamiliesService } from './families.service';
-import { CreateFamilyDto, UpdateFamilyDto, FamilyIncome } from './family.entity';
+import {
+  CreateFamilyDto,
+  UpdateFamilyDto,
+  FamilyIncome,
+} from './family.entity';
 // Importando o AuthGuard customizado do projeto
 import { AuthGuard } from '../users/guards/auth.guard';
 

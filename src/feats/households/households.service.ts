@@ -35,8 +35,6 @@ export class HouseholdsService {
       const user = await this.userRepository.findOneBy({ id: userId });
       if (user) {
         household.createdBy = user;
-        // Herda o CNS do profissional para auditoria
-        household.cns_profissional = user.cns_profissional;
       }
     }
 

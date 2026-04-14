@@ -13,7 +13,9 @@ describe('RiskCalculatorService', () => {
 
   beforeEach(async () => {
     mockFamiliesService = {
-      findOne: jest.fn().mockResolvedValue({ id: 'uuid-1', membros_declarados: 4 }),
+      findOne: jest
+        .fn()
+        .mockResolvedValue({ id: 'uuid-1', membros_declarados: 4 }),
       update: jest.fn().mockResolvedValue(true),
     };
 
@@ -55,8 +57,12 @@ describe('RiskCalculatorService', () => {
       roomsCount: 4, // 4 members / 4 rooms = 1 => 1 point
     };
 
-    const result = await service.calculateFeatureRisk('uuid-1', payload, 'user-xyz');
-    
+    const result = await service.calculateFeatureRisk(
+      'uuid-1',
+      payload,
+      'user-xyz',
+    );
+
     // total 3 + 2 + 1 + 1 = 7 (R2)
     expect(result.finalScore).toBe(7);
     expect(result.riskClass).toBe(FamilyRisk.R2);
@@ -80,8 +86,12 @@ describe('RiskCalculatorService', () => {
       roomsCount: 5, // 4 members / 5 rooms < 1 => 0 points
     };
 
-    const result = await service.calculateFeatureRisk('uuid-1', payload, 'user-xyz');
-    
+    const result = await service.calculateFeatureRisk(
+      'uuid-1',
+      payload,
+      'user-xyz',
+    );
+
     // total 3 + 0 = 3 (R1)
     expect(result.finalScore).toBe(3);
     expect(result.riskClass).toBe(FamilyRisk.R1);
@@ -105,6 +115,8 @@ describe('RiskCalculatorService', () => {
     };
     // Sum = 2+2+1 = 5. Members = 4.
 
-    await expect(service.calculateFeatureRisk('uuid-1', payload, 'user-xyz')).rejects.toThrow(BadRequestException);
+    await expect(
+      service.calculateFeatureRisk('uuid-1', payload, 'user-xyz'),
+    ).rejects.toThrow(BadRequestException);
   });
 });

@@ -8,7 +8,11 @@ import { UsersModule } from '../users/users.module';
 import { FamiliesModule } from '../families/families.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Family, Individual]), UsersModule, FamiliesModule],
+  imports: [
+    TypeOrmModule.forFeature([Family, Individual]),
+    UsersModule,
+    FamiliesModule,
+  ],
   controllers: [SyncController],
   providers: [SyncService],
   exports: [SyncService],

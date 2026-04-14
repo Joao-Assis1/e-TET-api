@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Visit, CreateVisitDto, UpdateVisitDto } from './visit.entity';
@@ -28,16 +32,20 @@ export class VisitsService {
    * Valida dependências e a existência de um Responsável Familiar caso a visita seja para uma Família.
    */
   async create(createVisitDto: CreateVisitDto): Promise<Visit> {
-    const household = createVisitDto.household_id 
-      ? await this.householdsRepository.findOne({ where: { id: createVisitDto.household_id } })
+    const household = createVisitDto.household_id
+      ? await this.householdsRepository.findOne({
+          where: { id: createVisitDto.household_id },
+        })
       : null;
 
     if (createVisitDto.household_id && !household) {
       throw new NotFoundException('Domicílio informado não encontrado.');
     }
 
-    const family = createVisitDto.family_id 
-      ? await this.familiesRepository.findOne({ where: { id: createVisitDto.family_id } })
+    const family = createVisitDto.family_id
+      ? await this.familiesRepository.findOne({
+          where: { id: createVisitDto.family_id },
+        })
       : null;
 
     if (createVisitDto.family_id) {
@@ -47,7 +55,11 @@ export class VisitsService {
 
       // Regra e-SUS: Visitas familiares exigem um responsável ativo
       const hasResponsible = await this.individualsRepository.findOne({
-        where: { family: { id: family.id }, is_responsavel: true, arquivado: false },
+        where: {
+          family: { id: family.id },
+          is_responsavel: true,
+          arquivado: false,
+        },
       });
 
       if (!hasResponsible) {
@@ -57,8 +69,10 @@ export class VisitsService {
       }
     }
 
-    const individual = createVisitDto.individual_id 
-      ? await this.individualsRepository.findOne({ where: { id: createVisitDto.individual_id } })
+    const individual = createVisitDto.individual_id
+      ? await this.individualsRepository.findOne({
+          where: { id: createVisitDto.individual_id },
+        })
       : null;
 
     if (createVisitDto.individual_id && !individual) {
@@ -67,7 +81,9 @@ export class VisitsService {
 
     // Validação mínima de vínculo
     if (!household && !family && !individual) {
-      throw new BadRequestException('A visita deve estar vinculada a pelo menos um Imóvel, Família ou Cidadão.');
+      throw new BadRequestException(
+        'A visita deve estar vinculada a pelo menos um Imóvel, Família ou Cidadão.',
+      );
     }
 
     const visit = this.visitsRepository.create({
@@ -76,7 +92,7 @@ export class VisitsService {
       family,
       individual,
     });
-    
+
     return this.visitsRepository.save(visit);
   }
 
@@ -123,21 +139,27 @@ export class VisitsService {
     const visit = await this.findOne(id);
 
     Object.assign(visit, updateVisitDto);
-    
+
     // Atualização manual de relacionamentos se fornecidos
     if (updateVisitDto.household_id !== undefined) {
-      visit.household = updateVisitDto.household_id 
-        ? await this.householdsRepository.findOne({ where: { id: updateVisitDto.household_id } })
+      visit.household = updateVisitDto.household_id
+        ? await this.householdsRepository.findOne({
+            where: { id: updateVisitDto.household_id },
+          })
         : null;
     }
     if (updateVisitDto.family_id !== undefined) {
-      visit.family = updateVisitDto.family_id 
-        ? await this.familiesRepository.findOne({ where: { id: updateVisitDto.family_id } })
+      visit.family = updateVisitDto.family_id
+        ? await this.familiesRepository.findOne({
+            where: { id: updateVisitDto.family_id },
+          })
         : null;
     }
     if (updateVisitDto.individual_id !== undefined) {
-      visit.individual = updateVisitDto.individual_id 
-        ? await this.individualsRepository.findOne({ where: { id: updateVisitDto.individual_id } })
+      visit.individual = updateVisitDto.individual_id
+        ? await this.individualsRepository.findOne({
+            where: { id: updateVisitDto.individual_id },
+          })
         : null;
     }
 

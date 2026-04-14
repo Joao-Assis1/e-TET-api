@@ -9,14 +9,14 @@ export class LoginController {
 
   @Post()
   @ApiOperation({ summary: 'Realizar login' })
-  @ApiBody({ 
-    schema: { 
-      type: 'object', 
-      properties: { 
-        usuario: { type: 'string', example: 'acs_jose' }, 
-        senha: { type: 'string', example: 'acs123' } 
-      } 
-    } 
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        usuario: { type: 'string', example: 'acs_jose' },
+        senha: { type: 'string', example: 'acs123' },
+      },
+    },
   })
   async login(@Body('usuario') usuario: string, @Body('senha') senha: string) {
     return this.loginService.login(usuario, senha);

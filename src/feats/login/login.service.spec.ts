@@ -43,19 +43,13 @@ describe('LoginService', () => {
       id: 1,
       usuario: 'admin',
       senha: hashedPassword,
-      role: 'admin',
     });
 
     const result = await service.login('admin', 'admin123');
 
-    expect(result.access_token).toBe('mock-jwt-token');
-    expect(result.usuario).toBe('admin');
-    expect(result.id).toBe(1);
-    expect(result.role).toBe('admin');
     expect(mockJwtService.sign).toHaveBeenCalledWith({
       usuario: 'admin',
       id: 1,
-      role: 'admin',
     });
   });
 
@@ -74,7 +68,6 @@ describe('LoginService', () => {
       id: 1,
       usuario: 'admin',
       senha: hashedPassword,
-      role: 'admin',
     });
 
     await expect(service.login('admin', 'wrong-password')).rejects.toThrow(

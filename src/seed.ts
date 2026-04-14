@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { UsersService } from './feats/users/users.service';
-import { UserRole } from './feats/users/user.entity';
 
 async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -15,14 +14,11 @@ async function seed() {
     await usersService.create({
       usuario: adminUsername,
       senha: 'admin123',
-      role: UserRole.ADMIN,
-      cns_profissional: '000000000000000',
-      cnes_estabelecimento: '0000000',
     });
     console.log('✅ Usuário ADMIN criado: admin / admin123');
   }
 
-  // 2. Criar ACS de Teste (Profissional)
+  // 2. Criar ACS de Teste
   const acsUsername = 'acs_jose';
   const existingAcs = await usersService.findByUsername(acsUsername);
 
@@ -30,13 +26,8 @@ async function seed() {
     await usersService.create({
       usuario: acsUsername,
       senha: 'acs123',
-      role: UserRole.PROFISSIONAL,
-      cns_profissional: '209384756100005', // CNS Fictício Válido (Formato)
-      cnes_estabelecimento: '7654321', // CNE da Unidade de Saúde
     });
-    console.log(
-      '✅ Usuário ACS criado: acs_jose / acs123 (CNS: 209384756100005)',
-    );
+    console.log('✅ Usuário ACS criado: acs_jose / acs123');
   } else {
     console.log('ℹ️ Os usuários de seed já existem.');
   }
