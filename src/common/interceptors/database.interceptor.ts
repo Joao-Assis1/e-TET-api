@@ -31,7 +31,10 @@ export class DatabaseInterceptor implements NestInterceptor {
             errorMessage.includes('already exists')
           ) {
             return throwError(
-              () => new BadRequestException('Este registro já existe ou viola uma restrição de unicidade.'),
+              () =>
+                new BadRequestException(
+                  'Este registro já existe ou viola uma restrição de unicidade.',
+                ),
             );
           }
         }

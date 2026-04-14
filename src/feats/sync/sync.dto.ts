@@ -22,7 +22,7 @@ import {
   Kinship,
   SexualOrientation,
   GenderIdentity,
-  DisabilityType
+  DisabilityType,
 } from '../individuals/individual.entity';
 
 import { PartialType } from '@nestjs/mapped-types';

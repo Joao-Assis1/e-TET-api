@@ -26,7 +26,7 @@ export class UsersService {
    */
   async create(createUserDto: CreateUserDto): Promise<User> {
     const { usuario, senha } = createUserDto;
-    
+
     // Verifica existencia prévia
     const existingUser = await this.usersRepository.findOneBy({ usuario });
     if (existingUser) {

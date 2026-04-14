@@ -5,7 +5,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Family, CreateFamilyDto, UpdateFamilyDto, FamilyStatus, FamilyIncome } from './family.entity';
+import {
+  Family,
+  CreateFamilyDto,
+  UpdateFamilyDto,
+  FamilyStatus,
+  FamilyIncome,
+} from './family.entity';
 
 /**
  * Serviço de gerenciamento de famílias.
@@ -31,7 +37,7 @@ export class FamiliesService {
       household_id: household_id || null,
       household: household_id ? ({ id: household_id } as any) : null,
     });
-    
+
     return await this.familyRepository.save(family);
   }
 
@@ -111,7 +117,9 @@ export class FamiliesService {
     } catch (error) {
       await queryRunner.rollbackTransaction();
       if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Erro ao sincronizar renda familiar.');
+      throw new InternalServerErrorException(
+        'Erro ao sincronizar renda familiar.',
+      );
     } finally {
       await queryRunner.release();
     }
@@ -139,7 +147,7 @@ export class FamiliesService {
     family.historico_domicilios = family.historico_domicilios
       ? [...family.historico_domicilios, moveLog]
       : [moveLog];
-    
+
     family.household = null;
     family.status_mudanca = FamilyStatus.MUDOU_SE;
     family.arquivada = true;

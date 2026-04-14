@@ -94,7 +94,8 @@ describe('HouseholdsService', () => {
       tipo_domicilio: HouseholdType.CASA,
       numero_moradores: 4,
       numero_comodos: 5,
-      material_construcao: ConstructionMaterial.ALVENARIA_TIJOLO_COM_REVESTIMENTO,
+      material_construcao:
+        ConstructionMaterial.ALVENARIA_TIJOLO_COM_REVESTIMENTO,
       abastecimento_agua: WaterSupply.REDE_ENCANADA,
       agua_consumo: WaterTreatment.FILTRACAO,
       escoamento_banheiro: SewageDisposal.REDE_COLETORA,

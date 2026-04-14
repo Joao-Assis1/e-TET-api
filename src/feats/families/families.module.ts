@@ -10,7 +10,10 @@ import { RiskStratificationController } from './controllers/risk.controller';
 import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Family, FamilyRiskStratification]), UsersModule],
+  imports: [
+    TypeOrmModule.forFeature([Family, FamilyRiskStratification]),
+    UsersModule,
+  ],
   controllers: [FamiliesController, RiskStratificationController],
   providers: [FamiliesService, RiskCalculatorService],
   exports: [FamiliesService, RiskCalculatorService],

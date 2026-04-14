@@ -9,7 +9,10 @@ import { Family } from '../families/family.entity';
 import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Individual, IndividualHealth, Family]), UsersModule],
+  imports: [
+    TypeOrmModule.forFeature([Individual, IndividualHealth, Family]),
+    UsersModule,
+  ],
   controllers: [IndividualsController],
   providers: [IndividualsService],
   exports: [IndividualsService],

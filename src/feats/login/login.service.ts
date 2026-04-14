@@ -21,7 +21,7 @@ export class LoginService {
    */
   async validateUser(usuario: string, senha: string): Promise<User | null> {
     const user = await this.usersService.findByUsername(usuario);
-    
+
     // Compara a senha informada com o hash salvo no banco
     if (user && (await bcrypt.compare(senha, user.senha))) {
       const { senha: _, ...result } = user;
@@ -35,21 +35,19 @@ export class LoginService {
    */
   async login(usuario: string, senha: string) {
     const user = await this.validateUser(usuario, senha);
-    
+
     if (!user) {
       throw new UnauthorizedException('Usuário ou senha inválidos');
     }
 
-    const payload = { 
-      usuario: user.usuario, 
-      id: user.id, 
-      role: user.role 
+    const payload = {
+      usuario: user.usuario,
+      id: user.id,
     };
 
     return {
       id: user.id,
       usuario: user.usuario,
-      role: user.role,
       access_token: this.jwtService.sign(payload),
     };
   }

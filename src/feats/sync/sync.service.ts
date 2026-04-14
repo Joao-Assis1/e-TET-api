@@ -124,7 +124,9 @@ export class SyncService {
       });
 
       if (!user) {
-        throw new InternalServerErrorException('Usuário logado não encontrado no banco de dados.');
+        throw new InternalServerErrorException(
+          'Usuário logado não encontrado no banco de dados.',
+        );
       }
 
       // 1. Processar Domicílios
@@ -166,7 +168,7 @@ export class SyncService {
       );
 
       await queryRunner.commitTransaction();
-      
+
       return {
         sucesso: true,
         message: 'Lote processado com sucesso.',
@@ -175,7 +177,10 @@ export class SyncService {
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      this.logger.error(`Erro crítico na sincronização: ${error.message}`, error.stack);
+      this.logger.error(
+        `Erro crítico na sincronização: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException(
         `Falha crítica no processamento: ${(error as Error).message}`,
       );
@@ -198,9 +203,12 @@ export class SyncService {
     for (const h of households) {
       const dto = plainToInstance(SyncHouseholdDataDto, h);
       const errors = await validate(dto);
-      
+
       if (errors.length > 0) {
-        inconsistencies.households.push({ id: h.id, erro: 'Erro de validação de esquema' });
+        inconsistencies.households.push({
+          id: h.id,
+          erro: 'Erro de validação de esquema',
+        });
         if (h.id) failedIds.households.add(h.id);
         continue;
       }
@@ -227,9 +235,9 @@ export class SyncService {
             id: id || undefined,
           } as any);
         }
-        
-        await queryRunner.manager.save(Household, hdEntity!);
-        if (hdEntity!.id) savedIds.households.push(hdEntity!.id);
+
+        await queryRunner.manager.save(Household, hdEntity);
+        if (hdEntity.id) savedIds.households.push(hdEntity.id);
       } catch (e) {
         inconsistencies.households.push({
           id: h.id,
@@ -263,7 +271,10 @@ export class SyncService {
     for (const f of families) {
       // Verifica se o domicílio pai falhou
       if (f.household_id && failedIds.households.has(f.household_id)) {
-        inconsistencies.families.push({ id: f.id, erro: 'Falha em cascata (Domicílio falhou)' });
+        inconsistencies.families.push({
+          id: f.id,
+          erro: 'Falha em cascata (Domicílio falhou)',
+        });
         if (f.id) failedIds.families.add(f.id);
         continue;
       }
@@ -271,7 +282,10 @@ export class SyncService {
       const dto = plainToInstance(SyncFamilyDataDto, f);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        inconsistencies.families.push({ id: f.id, erro: 'Erro de validação de dados' });
+        inconsistencies.families.push({
+          id: f.id,
+          erro: 'Erro de validação de dados',
+        });
         if (f.id) failedIds.families.add(f.id);
         continue;
       }
@@ -326,8 +340,8 @@ export class SyncService {
           } as any);
         }
 
-        await queryRunner.manager.save(Family, fEntity!);
-        if (fEntity!.id) savedIds.families.push(fEntity!.id);
+        await queryRunner.manager.save(Family, fEntity);
+        if (fEntity.id) savedIds.families.push(fEntity.id);
       } catch (e) {
         inconsistencies.families.push({
           id: f.id,
@@ -341,7 +355,10 @@ export class SyncService {
   /**
    * Mapeia os dados dos cidadãos para o formato esperado pelo calculador de risco.
    */
-  private mapRiskPayload(f: SyncFamilyDataDto, members: SyncIndividualDataDto[]): CreateRiskAssessmentDto {
+  private mapRiskPayload(
+    f: SyncFamilyDataDto,
+    members: SyncIndividualDataDto[],
+  ): CreateRiskAssessmentDto {
     const payload: CreateRiskAssessmentDto = {
       bedriddenCount: 0,
       physicalDisabilityCount: 0,
@@ -372,7 +389,7 @@ export class SyncService {
         const diffMs = Date.now() - birthDate.getTime();
         const ageMonths = diffMs / (1000 * 60 * 60 * 24 * 30.44);
         const ageYears = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
-        
+
         if (ageMonths < 6) payload.under6MonthsCount++;
         if (ageYears > 70) payload.over70YearsCount++;
       }
@@ -395,14 +412,20 @@ export class SyncService {
   ) {
     for (const i of individuals) {
       if (i.family_id && failedIds.families.has(i.family_id)) {
-        inconsistencies.individuals.push({ id: i.id, erro: 'Falha em cascata (Família falhou)' });
+        inconsistencies.individuals.push({
+          id: i.id,
+          erro: 'Falha em cascata (Família falhou)',
+        });
         continue;
       }
 
       const dto = plainToInstance(SyncIndividualDataDto, i);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        inconsistencies.individuals.push({ id: i.id, erro: 'Erro de validação' });
+        inconsistencies.individuals.push({
+          id: i.id,
+          erro: 'Erro de validação',
+        });
         continue;
       }
 
@@ -419,7 +442,9 @@ export class SyncService {
         const base: DeepPartial<Individual> = {
           ...data,
           family: family_id ? { id: family_id as any } : undefined,
-          data_nascimento: data.data_nascimento ? new Date(data.data_nascimento) : undefined,
+          data_nascimento: data.data_nascimento
+            ? new Date(data.data_nascimento)
+            : undefined,
         };
 
         if (iEnt) {
@@ -430,7 +455,10 @@ export class SyncService {
               healthConditions,
             );
           } else if (healthConditions) {
-            iEnt.healthConditions = queryRunner.manager.create(IndividualHealth, healthConditions);
+            iEnt.healthConditions = queryRunner.manager.create(
+              IndividualHealth,
+              healthConditions,
+            );
           }
           queryRunner.manager.merge(Individual, iEnt, base);
         } else {
@@ -439,12 +467,15 @@ export class SyncService {
             id: id || undefined,
           } as any);
           if (healthConditions) {
-            iEnt.healthConditions = queryRunner.manager.create(IndividualHealth, healthConditions);
+            iEnt.healthConditions = queryRunner.manager.create(
+              IndividualHealth,
+              healthConditions,
+            );
           }
         }
-        
-        await queryRunner.manager.save(Individual, iEnt!);
-        if (iEnt!.id) savedIds.individuals.push(iEnt!.id);
+
+        await queryRunner.manager.save(Individual, iEnt);
+        if (iEnt.id) savedIds.individuals.push(iEnt.id);
       } catch (e) {
         inconsistencies.individuals.push({
           id: i.id,
@@ -466,7 +497,10 @@ export class SyncService {
   ) {
     for (const v of visits) {
       if (v.household_id && failedIds.households.has(v.household_id)) {
-        inconsistencies.visits.push({ id: v.id, erro: 'Falha em cascata (Domicílio falhou)' });
+        inconsistencies.visits.push({
+          id: v.id,
+          erro: 'Falha em cascata (Domicílio falhou)',
+        });
         continue;
       }
 
@@ -484,7 +518,9 @@ export class SyncService {
           household: household_id ? { id: household_id as any } : undefined,
           family: family_id ? { id: family_id as any } : undefined,
           individual: individual_id ? { id: individual_id as any } : undefined,
-          data_visita: data.data_visita ? new Date(data.data_visita) : undefined,
+          data_visita: data.data_visita
+            ? new Date(data.data_visita)
+            : undefined,
         };
 
         if (vEnt) {
@@ -495,9 +531,9 @@ export class SyncService {
             id: id || undefined,
           } as any);
         }
-        
-        await queryRunner.manager.save(Visit, vEnt!);
-        if (vEnt!.id) savedIds.visits.push(vEnt!.id);
+
+        await queryRunner.manager.save(Visit, vEnt);
+        if (vEnt.id) savedIds.visits.push(vEnt.id);
       } catch (e) {
         inconsistencies.visits.push({ id: v.id, erro: (e as Error).message });
       }

@@ -134,9 +134,6 @@ export class Visit {
   @Column({ type: 'varchar' })
   turno: TurnoVisita;
 
-  @Column({ type: 'varchar', nullable: true })
-  cns_profissional: string | null;
-
   @CreateDateColumn()
   created_at: Date;
 
@@ -243,11 +240,6 @@ export class CreateVisitDto {
   @ApiProperty({ enum: TurnoVisita })
   @IsEnum(TurnoVisita)
   turno: TurnoVisita;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  cns_profissional?: string;
 }
 
 export class UpdateVisitDto extends PartialType(CreateVisitDto) {}
