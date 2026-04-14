@@ -29,12 +29,13 @@ import { JwtModule } from '@nestjs/jwt';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get('DATABASE_URL');
         const isProduction = configService.get('NODE_ENV') === 'production';
 
-        if (isProduction) {
+        if (databaseUrl) {
           return {
             type: 'postgres',
-            url: configService.get('DATABASE_URL'),
+            url: databaseUrl,
             entities: [
               User,
               Family,
@@ -45,9 +46,9 @@ import { JwtModule } from '@nestjs/jwt';
               FamilyRiskStratification,
             ],
             synchronize: true,
-            ssl: {
+            ssl: databaseUrl.includes('neon.tech') ? {
               rejectUnauthorized: false,
-            },
+            } : false,
           };
         }
 
