@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
+} from 'typeorm';
 import { StreetTime, MealsPerDay } from './individual.entity';
 import { Individual } from './individual.entity';
 
@@ -93,4 +101,13 @@ export class IndividualHealth {
 
   @OneToOne(() => Individual, (individual) => individual.healthConditions)
   individual: Individual;
+
+  @CreateDateColumn({ nullable: true })
+  created_at: Date;
+
+  @UpdateDateColumn({ nullable: true })
+  updated_at: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deleted_at: Date;
 }

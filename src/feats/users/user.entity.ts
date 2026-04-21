@@ -3,10 +3,10 @@ import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserDto {
-  @ApiProperty({ description: 'Nome de usuário único', example: 'acs_jose' })
+  @ApiProperty({ description: 'CPF único do usuário', example: '12345678900' })
   @IsString()
   @IsNotEmpty()
-  usuario: string;
+  cpf: string;
 
   @ApiProperty({ description: 'Senha do usuário', example: 'senha123' })
   @IsString()
@@ -20,14 +20,14 @@ export class User {
   id: number;
 
   @Column({ unique: true })
-  usuario: string;
+  cpf: string;
 
   @Column()
   senha: string;
 
   constructor(userDto?: CreateUserDto) {
     if (userDto) {
-      this.usuario = userDto.usuario;
+      this.cpf = userDto.cpf;
       this.senha = userDto.senha;
     }
   }

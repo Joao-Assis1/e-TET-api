@@ -25,12 +25,12 @@ export class UsersService {
    * @param createUserDto Dados do novo usuário.
    */
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const { usuario, senha } = createUserDto;
+    const { cpf, senha } = createUserDto;
 
     // Verifica existencia prévia
-    const existingUser = await this.usersRepository.findOneBy({ usuario });
+    const existingUser = await this.usersRepository.findOneBy({ cpf });
     if (existingUser) {
-      throw new ConflictException('Usuário já existe');
+      throw new ConflictException('Usuário com este CPF já existe');
     }
 
     // Hash da senha usando bcrypt (10 rounds)
@@ -44,10 +44,10 @@ export class UsersService {
   }
 
   /**
-   * Busca um usuário pelo nome de usuário exclusivo.
+   * Busca um usuário pelo CPF exclusivo.
    */
-  async findByUsername(usuario: string): Promise<User | null> {
-    return this.usersRepository.findOneBy({ usuario });
+  async findByCpf(cpf: string): Promise<User | null> {
+    return this.usersRepository.findOneBy({ cpf });
   }
 
   /**
