@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Family } from './family.entity';
+import { Individual } from '../individuals/individual.entity';
+import { IndividualHealth } from '../individuals/individual-health.entity';
+import { Visit } from '../visits/visit.entity';
 import { FamilyRiskStratification } from './entities/family-risk.entity';
 import { FamiliesService } from './families.service';
 import { FamiliesController } from './families.controller';
@@ -11,7 +14,13 @@ import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Family, FamilyRiskStratification]),
+    TypeOrmModule.forFeature([
+      Family,
+      FamilyRiskStratification,
+      Individual,
+      IndividualHealth,
+      Visit,
+    ]),
     UsersModule,
   ],
   controllers: [FamiliesController, RiskStratificationController],

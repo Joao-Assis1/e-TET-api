@@ -5,6 +5,8 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { Family } from '../family.entity';
 
@@ -40,4 +42,10 @@ export class FamilyRiskStratification {
 
   @Column() createdBy: string;
   @CreateDateColumn() createdAt: Date;
+
+  @UpdateDateColumn({ nullable: true })
+  updatedAt: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt: Date;
 }
