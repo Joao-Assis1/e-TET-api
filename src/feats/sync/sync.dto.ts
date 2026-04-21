@@ -31,6 +31,18 @@ export class SyncHouseholdDataDto extends PartialType(CreateHouseholdDto) {
   @IsOptional()
   @IsUUID()
   id?: string;
+
+  @IsOptional()
+  @IsString()
+  _tempId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  updatedAt?: string;
+
+  @IsOptional()
+  @IsString()
+  createdBy?: string;
 }
 
 export class SyncFamilyDataDto extends PartialType(CreateFamilyDto) {
@@ -39,14 +51,38 @@ export class SyncFamilyDataDto extends PartialType(CreateFamilyDto) {
   id?: string;
 
   @IsOptional()
+  @IsString()
+  _tempId?: string;
+
+  @IsOptional()
   @IsUUID()
   household_id?: string;
+
+  @IsOptional()
+  @IsDateString()
+  updatedAt?: string;
+
+  @IsOptional()
+  @IsString()
+  createdBy?: string;
 }
 
 export class SyncVisitDataDto extends PartialType(CreateVisitDto) {
   @IsOptional()
   @IsUUID()
   id?: string;
+
+  @IsOptional()
+  @IsString()
+  _tempId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  updatedAt?: string;
+
+  @IsOptional()
+  @IsString()
+  createdBy?: string;
 }
 
 export class SyncIndividualDataDto {
@@ -55,8 +91,20 @@ export class SyncIndividualDataDto {
   id?: string;
 
   @IsOptional()
+  @IsString()
+  _tempId?: string;
+
+  @IsOptional()
   @IsUUID()
   family_id?: string;
+
+  @IsOptional()
+  @IsDateString()
+  updatedAt?: string;
+
+  @IsOptional()
+  @IsString()
+  createdBy?: string;
 
   @IsOptional()
   @IsBoolean()

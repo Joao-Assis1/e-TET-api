@@ -23,8 +23,8 @@ export class SyncController {
     summary: 'Baixar base de dados inicial para o tablet (Offline-First)',
   })
   async getInitialData(@Request() req: any) {
-    // req.user.sub contém o ID gerado pelo JwtService (configurado no AuthGuard)
-    return this.syncService.getInitialSyncData(req.user.sub);
+    // req.user.id contém o ID gerado pelo JwtService (conforme definido no LoginService)
+    return this.syncService.getInitialSyncData(req.user.id);
   }
 
   @Post('batch')
@@ -33,6 +33,7 @@ export class SyncController {
       'Sincronizar Lote (Batch) de Domicílios, Famílias, Indivíduos e Visitas do tablet para a API (Calcula Risco Coelho-Savassi)',
   })
   async syncBatch(@Body() payload: SyncBatchPayloadDto, @Request() req: any) {
-    return this.syncService.processBatchSync(payload, req.user.sub);
+    console.log(`[SyncController] Recebido lote de sync do usuário ${req.user?.id}`);
+    return this.syncService.processBatchSync(payload, req.user.id);
   }
 }
