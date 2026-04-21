@@ -12,6 +12,10 @@ import {
   FamilyStatus,
   FamilyIncome,
 } from './family.entity';
+import { FamilyRiskStratification } from './entities/family-risk.entity';
+import { Individual } from '../individuals/individual.entity';
+import { IndividualHealth } from '../individuals/individual-health.entity';
+import { Visit } from '../visits/visit.entity';
 
 /**
  * Serviço de gerenciamento de famílias.
@@ -82,11 +86,61 @@ export class FamiliesService {
   }
 
   /**
-   * Remove uma família (Soft Delete - apenas marca como deletado no banco).
+   * Remove uma família (Soft Delete em Cascata).
+   * Marca como excluída a família, seus membros (indivíduos), visitas e estratificações de risco.
    */
   async remove(id: string): Promise<void> {
-    const family = await this.findOne(id);
-    await this.familyRepository.softRemove(family);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const family = await queryRunner.manager.findOne(Family, {
+        where: { id },
+      });
+
+      if (!family) {
+        throw new NotFoundException(`Família com ID ${id} não encontrada`);
+      }
+
+      // 1. Soft Delete Estratificações de Risco
+      await queryRunner.manager.softDelete(FamilyRiskStratification, {
+        familyId: id,
+      });
+
+      // 2. Soft Delete Visitas relacionadas à família
+      await queryRunner.manager.softDelete(Visit, { family: { id } });
+
+      // 3. Soft Delete Indivíduos e suas condições de saúde
+      const individuals = await queryRunner.manager.find(Individual, {
+        where: { family: { id } },
+        relations: ['healthConditions'],
+      });
+
+      if (individuals.length > 0) {
+        const healthIds = individuals
+          .map((ind) => ind.healthConditions?.id)
+          .filter(Boolean);
+
+        if (healthIds.length > 0) {
+          await queryRunner.manager.softDelete(IndividualHealth, healthIds);
+        }
+        await queryRunner.manager.softRemove(individuals);
+      }
+
+      // 4. Soft Delete da Família
+      await queryRunner.manager.softRemove(family);
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException(
+        `Erro ao excluir família em cascata: ${error.message}`,
+      );
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   /**

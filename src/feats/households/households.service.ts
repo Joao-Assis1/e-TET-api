@@ -1,12 +1,21 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository, ILike, DataSource } from 'typeorm';
 import { User } from '../users/user.entity';
 import {
   Household,
   CreateHouseholdDto,
   UpdateHouseholdDto,
 } from './household.entity';
+import { Family } from '../families/family.entity';
+import { Individual } from '../individuals/individual.entity';
+import { IndividualHealth } from '../individuals/individual-health.entity';
+import { Visit } from '../visits/visit.entity';
+import { FamilyRiskStratification } from '../families/entities/family-risk.entity';
 
 /**
  * Serviço responsável pela gestão de domicílios (território).
@@ -18,6 +27,7 @@ export class HouseholdsService {
     private householdRepository: Repository<Household>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -78,11 +88,73 @@ export class HouseholdsService {
   }
 
   /**
-   * Remove um domicílio do sistema (Soft Delete).
+   * Remove um domicílio do sistema (Soft Delete em Cascata).
+   * Marca como excluído o domicílio, suas famílias, indivíduos, visitas e estratificações de risco.
    */
   async remove(id: string): Promise<void> {
-    const household = await this.findOne(id);
-    await this.householdRepository.softRemove(household);
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const household = await queryRunner.manager.findOne(Household, {
+        where: { id },
+      });
+
+      if (!household) {
+        throw new NotFoundException(`Domicílio com ID ${id} não encontrado`);
+      }
+
+      // 1. Soft Delete Visitas relacionadas ao domicílio
+      await queryRunner.manager.softDelete(Visit, { household: { id } });
+
+      // 2. Encontrar famílias para cascata
+      const families = await queryRunner.manager.find(Family, {
+        where: { household: { id } },
+      });
+
+      for (const family of families) {
+        // Soft Delete Estratificações de Risco da Família
+        await queryRunner.manager.softDelete(FamilyRiskStratification, {
+          familyId: family.id,
+        });
+
+        // Soft Delete Indivíduos da Família e suas condições de saúde
+        const individuals = await queryRunner.manager.find(Individual, {
+          where: { family: { id: family.id } },
+          relations: ['healthConditions'],
+        });
+
+        if (individuals.length > 0) {
+          const healthIds = individuals
+            .map((ind) => ind.healthConditions?.id)
+            .filter(Boolean);
+
+          if (healthIds.length > 0) {
+            await queryRunner.manager.softDelete(IndividualHealth, healthIds);
+          }
+          await queryRunner.manager.softRemove(individuals);
+        }
+      }
+
+      // 3. Soft Delete das Famílias
+      if (families.length > 0) {
+        await queryRunner.manager.softRemove(families);
+      }
+
+      // 4. Soft Delete do Domicílio
+      await queryRunner.manager.softRemove(household);
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      if (error instanceof NotFoundException) throw error;
+      throw new InternalServerErrorException(
+        `Erro ao excluir domicílio em cascata: ${error.message}`,
+      );
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   /**

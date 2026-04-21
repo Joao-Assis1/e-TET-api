@@ -7,27 +7,27 @@ async function seed() {
   const usersService = app.get(UsersService);
 
   // 1. Criar Admin
-  const adminUsername = 'admin';
-  const existingAdmin = await usersService.findByUsername(adminUsername);
+  const adminCpf = '00000000000';
+  const existingAdmin = await usersService.findByCpf(adminCpf);
 
   if (!existingAdmin) {
     await usersService.create({
-      usuario: adminUsername,
+      cpf: adminCpf,
       senha: 'admin123',
     });
-    console.log('✅ Usuário ADMIN criado: admin / admin123');
+    console.log('✅ Usuário ADMIN criado: 00000000000 / admin123');
   }
 
   // 2. Criar ACS de Teste
-  const acsUsername = 'acs_jose';
-  const existingAcs = await usersService.findByUsername(acsUsername);
+  const acsCpf = '12345678900';
+  const existingAcs = await usersService.findByCpf(acsCpf);
 
   if (!existingAcs) {
     await usersService.create({
-      usuario: acsUsername,
+      cpf: acsCpf,
       senha: 'acs123',
     });
-    console.log('✅ Usuário ACS criado: acs_jose / acs123');
+    console.log('✅ Usuário ACS criado: 12345678900 / acs123');
   } else {
     console.log('ℹ️ Os usuários de seed já existem.');
   }

@@ -16,11 +16,11 @@ export class LoginService {
 
   /**
    * Valida as credenciais do usuário comparando o hash da senha armazenado no banco.
-   * @param usuario Nome de usuário informado.
+   * @param cpf CPF informado.
    * @param senha Senha em texto puro informada.
    */
-  async validateUser(usuario: string, senha: string): Promise<User | null> {
-    const user = await this.usersService.findByUsername(usuario);
+  async validateUser(cpf: string, senha: string): Promise<User | null> {
+    const user = await this.usersService.findByCpf(cpf);
 
     // Compara a senha informada com o hash salvo no banco
     if (user && (await bcrypt.compare(senha, user.senha))) {
@@ -33,21 +33,21 @@ export class LoginService {
   /**
    * Realiza o login completo, gerando o token JWT caso as credenciais estejam corretas.
    */
-  async login(usuario: string, senha: string) {
-    const user = await this.validateUser(usuario, senha);
+  async login(cpf: string, senha: string) {
+    const user = await this.validateUser(cpf, senha);
 
     if (!user) {
-      throw new UnauthorizedException('Usuário ou senha inválidos');
+      throw new UnauthorizedException('CPF ou senha inválidos');
     }
 
     const payload = {
-      usuario: user.usuario,
+      cpf: user.cpf,
       id: user.id,
     };
 
     return {
       id: user.id,
-      usuario: user.usuario,
+      cpf: user.cpf,
       access_token: this.jwtService.sign(payload),
     };
   }

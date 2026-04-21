@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FamilyRiskStratification } from '../entities/family-risk.entity';
+import { Individual } from '../../individuals/individual.entity';
 import { CreateRiskAssessmentDto } from '../dto/create-risk.dto';
 import { FamiliesService } from '../families.service';
 import { FamilyRisk } from '../family.entity';
@@ -16,29 +17,40 @@ export class RiskCalculatorService {
   constructor(
     @InjectRepository(FamilyRiskStratification)
     private readonly riskRepository: Repository<FamilyRiskStratification>,
+    @InjectRepository(Individual)
+    private readonly individualRepository: Repository<Individual>,
     private readonly familiesService: FamiliesService,
   ) {}
 
   public calculateScoreAndClass(
     payload: CreateRiskAssessmentDto,
-    membersCount: number,
+    individualsCount: number,
   ): { finalScore: number; riskClass: string } {
-    // Anti-Fraude validation
-    const totalSentinelas =
-      (payload.bedriddenCount || 0) +
-      (payload.physicalDisabilityCount || 0) +
-      (payload.mentalDisabilityCount || 0) +
-      (payload.severeMalnutritionCount || 0) +
-      (payload.drugAddictionCount || 0) +
-      (payload.unemployedCount || 0) +
-      (payload.illiterateCount || 0) +
-      (payload.under6MonthsCount || 0) +
-      (payload.over70YearsCount || 0) +
-      (payload.hypertensionCount || 0) +
-      (payload.diabetesCount || 0);
+    if (individualsCount <= 0) {
+      throw new BadRequestException(
+        'Não há indivíduos ativos vinculados para realizar a estratificação.',
+      );
+    }
 
-    if (totalSentinelas > membersCount) {
-      throw new BadRequestException('Total excedeu população familiar ativa');
+    // Anti-Fraud validation: No single sentinel count can exceed the population
+    const maxSingleSentinel = Math.max(
+      payload.bedriddenCount || 0,
+      payload.physicalDisabilityCount || 0,
+      payload.mentalDisabilityCount || 0,
+      payload.severeMalnutritionCount || 0,
+      payload.drugAddictionCount || 0,
+      payload.unemployedCount || 0,
+      payload.illiterateCount || 0,
+      payload.under6MonthsCount || 0,
+      payload.over70YearsCount || 0,
+      payload.hypertensionCount || 0,
+      payload.diabetesCount || 0,
+    );
+
+    if (maxSingleSentinel > individualsCount) {
+      throw new BadRequestException(
+        'Uma ou mais sentinelas excederam a população de indivíduos vinculados.',
+      );
     }
 
     if (!payload.roomsCount || payload.roomsCount <= 0) {
@@ -67,7 +79,7 @@ export class RiskCalculatorService {
       (!payload.basicSanitation ? 3 : 0);
 
     // Room ratio
-    const ratio = membersCount / payload.roomsCount;
+    const ratio = individualsCount / payload.roomsCount;
     let ratioPoints = 0;
     if (ratio < 1) {
       ratioPoints = 0;
@@ -82,9 +94,9 @@ export class RiskCalculatorService {
     let riskClass: string = FamilyRisk.R0;
     if (finalScore >= 9) {
       riskClass = FamilyRisk.R3;
-    } else if (finalScore >= 5) {
+    } else if (finalScore >= 7) {
       riskClass = FamilyRisk.R2;
-    } else if (finalScore >= 1) {
+    } else if (finalScore >= 5) {
       riskClass = FamilyRisk.R1;
     }
 
@@ -106,11 +118,13 @@ export class RiskCalculatorService {
       );
     });
 
-    const membersCount = family.membros_declarados || 0;
+    const individualsCount = await this.individualRepository.count({
+      where: { family_id: familyId, arquivado: false },
+    });
 
     const { finalScore, riskClass } = this.calculateScoreAndClass(
       payload,
-      membersCount,
+      individualsCount,
     );
 
     const riskRecord = new FamilyRiskStratification();
@@ -156,5 +170,16 @@ export class RiskCalculatorService {
         `Erro ao persistir estratificação: ${error.message}`,
       );
     }
+  }
+
+  /**
+   * Retorna o histórico de estratificações de risco de uma família.
+   * Ordenado do mais recente para o mais antigo.
+   */
+  async getRiskHistory(familyId: string): Promise<FamilyRiskStratification[]> {
+    return this.riskRepository.find({
+      where: { familyId },
+      order: { createdAt: 'DESC' },
+    });
   }
 }
