@@ -13,12 +13,12 @@ export class LoginController {
     schema: {
       type: 'object',
       properties: {
-        usuario: { type: 'string', example: 'acs_jose' },
+        cpf: { type: 'string', example: '12345678900' },
         senha: { type: 'string', example: 'acs123' },
       },
     },
   })
-  async login(@Body('usuario') usuario: string, @Body('senha') senha: string) {
-    return this.loginService.login(usuario, senha);
+  async login(@Body('cpf') cpf: string, @Body('senha') senha: string) {
+    return this.loginService.login(cpf, senha);
   }
 }
