@@ -14,6 +14,7 @@ async function bootstrap() {
       'http://localhost:5174',
       'https://e-pet.vercel.app',
       'https://e-acs-front.vercel.app',
+      'https://e-acs-front.onrender.com',
       'https://e-tet-api.onrender.com',
       /vercel\.app$/, // Permite qualquer preview da vercel
     ],
