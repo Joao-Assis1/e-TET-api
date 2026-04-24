@@ -61,6 +61,18 @@ export class MicroareaGuard implements CanActivate {
         select: ['microarea'],
       });
       resourceMicroarea = household?.microarea ?? null;
+    } else if (entityType === 'Family') {
+      const family = await this.dataSource.manager.getRepository('Family').findOne({
+        where: { id: resourceId as string },
+        relations: ['household'],
+      });
+      resourceMicroarea = family?.household?.microarea ?? null;
+    } else if (entityType === 'Individual') {
+      const individual = await this.dataSource.manager.getRepository('Individual').findOne({
+        where: { id: resourceId as string },
+        relations: ['household'],
+      });
+      resourceMicroarea = individual?.household?.microarea ?? null;
     }
 
     if (resourceMicroarea && resourceMicroarea !== user.microarea) {

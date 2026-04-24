@@ -72,10 +72,16 @@ export class IndividualsService {
   }
 
   /**
-   * Retorna todos os cidadãos cadastrados.
+   * Retorna todos os cidadãos cadastrados, permitindo filtragem por microárea.
    */
-  async findAll(): Promise<Individual[]> {
-    return this.individualRepository.find({ relations: ['family'] });
+  async findAll(microarea?: string): Promise<Individual[]> {
+    return this.individualRepository.find({
+      where: microarea ? [
+        { household: { microarea } },
+        { family: { household: { microarea } } }
+      ] as any : {},
+      relations: ['family', 'household', 'family.household'],
+    });
   }
 
   /**

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { HouseholdsService } from './households.service';
 import {
@@ -32,6 +33,28 @@ describe('HouseholdsService', () => {
     findOneBy: jest.fn(),
   };
 
+  const mockDataSource = {
+    manager: {
+      findOne: jest.fn(),
+      find: jest.fn(),
+      softDelete: jest.fn(),
+      softRemove: jest.fn(),
+    },
+    createQueryRunner: jest.fn().mockReturnValue({
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      rollbackTransaction: jest.fn(),
+      release: jest.fn(),
+      manager: {
+        findOne: jest.fn(),
+        find: jest.fn(),
+        softDelete: jest.fn(),
+        softRemove: jest.fn(),
+      },
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -43,6 +66,10 @@ describe('HouseholdsService', () => {
         {
           provide: getRepositoryToken(User),
           useValue: mockUserRepository,
+        },
+        {
+          provide: DataSource,
+          useValue: mockDataSource,
         },
       ],
     }).compile();
@@ -126,11 +153,12 @@ describe('HouseholdsService', () => {
 
   it('should soft remove a household', async () => {
     const household = { id: 'uuid-1', logradouro: 'Rua A' };
-    mockHouseholdRepository.findOne.mockResolvedValue(household);
-    mockHouseholdRepository.softRemove.mockResolvedValue(household);
+    mockDataSource.createQueryRunner().manager.findOne.mockResolvedValue(household);
+    mockDataSource.createQueryRunner().manager.find.mockResolvedValue([]);
+    mockDataSource.createQueryRunner().manager.softRemove.mockResolvedValue(household);
 
     await service.remove('uuid-1');
 
-    expect(mockHouseholdRepository.softRemove).toHaveBeenCalledWith(household);
+    expect(mockDataSource.createQueryRunner().manager.softRemove).toHaveBeenCalledWith(household);
   });
 });

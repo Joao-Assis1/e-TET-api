@@ -103,6 +103,24 @@ export class RiskCalculatorService {
     return { finalScore, riskClass };
   }
 
+  /**
+   * Helper para centralizar as regras visuais de exibição de risco.
+   * Útil para o e-PET e e-ACS manterem a mesma identidade visual sem duplicar lógica.
+   */
+  public getRiskUIProfile(riskClass: string): { color: string; icon: string; label: string } {
+    const r = String(riskClass).toUpperCase();
+    if (r.includes('MÁXIMO') || r.includes('R3')) {
+      return { color: 'red-darken-4', icon: 'mdi-alert-octagon', label: 'Risco Máximo' };
+    }
+    if (r.includes('MÉDIO') || r.includes('R2')) {
+      return { color: 'deep-orange-darken-2', icon: 'mdi-alert', label: 'Risco Médio' };
+    }
+    if (r.includes('MENOR') || r.includes('R1')) {
+      return { color: 'orange-darken-2', icon: 'mdi-alert-circle-outline', label: 'Risco Menor' };
+    }
+    return { color: 'green-darken-2', icon: 'mdi-shield-check', label: 'Risco Baixo' };
+  }
+
   async calculateFeatureRisk(
     familyId: string,
     payload: CreateRiskAssessmentDto,

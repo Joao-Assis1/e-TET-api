@@ -9,7 +9,7 @@ describe('LoginService', () => {
   let service: LoginService;
 
   const mockUsersService = {
-    findByUsername: jest.fn(),
+    findByCpf: jest.fn(),
   };
 
   const mockJwtService = {
@@ -39,22 +39,26 @@ describe('LoginService', () => {
   it('should return access_token when credentials are valid', async () => {
     const hashedPassword = await bcrypt.hash('admin123', 10);
 
-    mockUsersService.findByUsername.mockResolvedValue({
+    mockUsersService.findByCpf.mockResolvedValue({
       id: 1,
-      usuario: 'admin',
+      cpf: '12345678900',
       senha: hashedPassword,
+      role: 'acs',
+      microarea: '01',
     });
 
-    const result = await service.login('admin', 'admin123');
+    const result = await service.login('12345678900', 'admin123');
 
     expect(mockJwtService.sign).toHaveBeenCalledWith({
-      usuario: 'admin',
+      cpf: '12345678900',
       id: 1,
+      role: 'acs',
+      microarea: '01',
     });
   });
 
   it('should throw UnauthorizedException when user does not exist', async () => {
-    mockUsersService.findByUsername.mockResolvedValue(null);
+    mockUsersService.findByCpf.mockResolvedValue(null);
 
     await expect(service.login('nonexistent', 'password')).rejects.toThrow(
       UnauthorizedException,
@@ -64,13 +68,13 @@ describe('LoginService', () => {
   it('should throw UnauthorizedException when password is wrong', async () => {
     const hashedPassword = await bcrypt.hash('correct-password', 10);
 
-    mockUsersService.findByUsername.mockResolvedValue({
+    mockUsersService.findByCpf.mockResolvedValue({
       id: 1,
-      usuario: 'admin',
+      cpf: '12345678900',
       senha: hashedPassword,
     });
 
-    await expect(service.login('admin', 'wrong-password')).rejects.toThrow(
+    await expect(service.login('12345678900', 'wrong-password')).rejects.toThrow(
       UnauthorizedException,
     );
   });

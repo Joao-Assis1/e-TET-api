@@ -80,4 +80,5 @@ wipe-and-seed.ts
 spec.md
 .specs/
 tlc-spec-driven/
-NestJsMcp
+create-test-user.ts
+test-integration-sync.js

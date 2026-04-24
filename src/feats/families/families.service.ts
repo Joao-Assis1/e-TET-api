@@ -47,10 +47,13 @@ export class FamiliesService {
 
   /**
    * Retorna todas as famílias (não arquivadas por padrão).
-   * Inclui a última estratificação de risco para pegar as sentinelas.
+   * Opcionalmente filtra por microárea via vínculo com Household.
    */
-  async findAll(): Promise<any[]> {
-    const families = await this.familyRepository.find();
+  async findAll(microarea?: string): Promise<any[]> {
+    const families = await this.familyRepository.find({
+      where: microarea ? { household: { microarea } } : {},
+      relations: ['household'],
+    });
     
     // Para cada família, buscar os dados de sentinelas mais recentes
     const enrichedFamilies = await Promise.all(

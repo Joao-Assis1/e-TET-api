@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  Request,
 } from '@nestjs/common';
 import { VisitsService } from './visits.service';
 import { CreateVisitDto, UpdateVisitDto } from './visit.entity';
@@ -28,8 +29,17 @@ export class VisitsController {
     @Query('household_id') householdId?: string,
     @Query('family_id') familyId?: string,
     @Query('individual_id') individualId?: string,
+    @Request() req?: any,
   ) {
-    return this.visitsService.findAll({ householdId, familyId, individualId });
+    const user = req?.user;
+    const microarea = user?.role === 'admin' ? undefined : user?.microarea;
+    
+    return this.visitsService.findAll({ 
+      householdId, 
+      familyId, 
+      individualId, 
+      microarea 
+    });
   }
 
   @Get(':id')

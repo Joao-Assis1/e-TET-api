@@ -97,17 +97,33 @@ export class VisitsService {
   }
 
   /**
-   * Lista visitas com filtros opcionais por domicílio, família ou indivíduo.
+   * Lista visitas com filtros opcionais por domicílio, família, indivíduo e microárea.
    */
   async findAll(options?: {
     householdId?: string;
     familyId?: string;
     individualId?: string;
+    microarea?: string;
   }): Promise<Visit[]> {
+    const { microarea, householdId, familyId, individualId } = options || {};
+    
+    if (microarea) {
+      // Se houver microárea, aplicamos o filtro territorial rigoroso
+      return this.visitsRepository.find({
+        where: [
+          { household: { microarea } },
+          { family: { household: { microarea } } },
+          { individual: { family: { household: { microarea } } } }
+        ] as any,
+        relations: ['household', 'family', 'individual'],
+        order: { created_at: 'DESC' },
+      });
+    }
+
     const where: any = {};
-    if (options?.householdId) where.household = { id: options.householdId };
-    if (options?.familyId) where.family = { id: options.familyId };
-    if (options?.individualId) where.individual = { id: options.individualId };
+    if (householdId) where.household = { id: householdId };
+    if (familyId) where.family = { id: familyId };
+    if (individualId) where.individual = { id: individualId };
 
     return this.visitsRepository.find({
       where,

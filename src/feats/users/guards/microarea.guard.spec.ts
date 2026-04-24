@@ -61,10 +61,10 @@ describe('MicroareaGuard', () => {
     expect(await guard.canActivate(context)).toBe(true);
   });
 
-  it('should allow if user has no microarea specific permission', async () => {
+  it('should allow if user is ADMIN even without microarea', async () => {
     mockReflector.get.mockReturnValue('Household');
     const context = createMockContext(
-      { name: 'Admin without microarea' },
+      { role: 'admin', name: 'Admin without microarea' },
       { id: 'uuid-123' },
     );
 

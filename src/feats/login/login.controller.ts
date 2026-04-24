@@ -1,6 +1,7 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { LoginService } from './login.service';
+import * as express from 'express';
 
 @ApiTags('Autenticação')
 @Controller('login')
@@ -18,7 +19,23 @@ export class LoginController {
       },
     },
   })
-  async login(@Body('cpf') cpf: string, @Body('senha') senha: string) {
-    return this.loginService.login(cpf, senha);
+  async login(
+    @Body('cpf') cpf: string,
+    @Body('senha') senha: string,
+    @Res({ passthrough: true }) response: express.Response,
+  ) {
+    const loginResult = await this.loginService.login(cpf, senha);
+
+    // Configura o cookie HttpOnly
+    response.cookie('access_token', loginResult.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Apenas HTTPS em produção
+      sameSite: 'strict', // Proteção contra CSRF
+      maxAge: 1000 * 60 * 60 * 24, // 1 dia
+    });
+
+    // Retorna os dados do usuário sem o token (opcional, mas comum para UI)
+    const { access_token, ...userData } = loginResult;
+    return userData;
   }
 }

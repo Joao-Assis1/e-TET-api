@@ -31,8 +31,11 @@ export class HouseholdsController {
   }
 
   @Get()
-  findAll(@Query('logradouro') logradouro?: string) {
-    return this.householdsService.findAll(logradouro);
+  findAll(@Req() req: any, @Query('logradouro') logradouro?: string) {
+    const user = req.user;
+    // Admins podem ver tudo, ACS vê apenas sua microárea
+    const microareaFilter = user.role === 'admin' ? undefined : user.microarea;
+    return this.householdsService.findAll(logradouro, microareaFilter);
   }
 
   @Get(':id')

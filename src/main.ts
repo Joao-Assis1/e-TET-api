@@ -1,13 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { DatabaseInterceptor } from './common/interceptors/database.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.enableCors();
+  app.enableCors({
+    origin: true, // Em produção, mude para os domínios específicos
+    credentials: true,
+  });
+  app.use(cookieParser());
   app.useGlobalInterceptors(new DatabaseInterceptor());
 
   app.useGlobalPipes(
