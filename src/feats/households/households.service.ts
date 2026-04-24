@@ -52,15 +52,20 @@ export class HouseholdsService {
   }
 
   /**
-   * Lista todos os domicílios, permitindo filtro opcional por logradouro.
+   * Lista todos os domicílios, permitindo filtro opcional por logradouro e microárea.
    */
-  async findAll(logradouro?: string): Promise<Household[]> {
+  async findAll(logradouro?: string, microarea?: string): Promise<Household[]> {
+    const where: any = {};
+    
     if (logradouro) {
-      return this.householdRepository.find({
-        where: { logradouro: ILike(`%${logradouro}%`) },
-      });
+      where.logradouro = ILike(`%${logradouro}%`);
     }
-    return this.householdRepository.find();
+    
+    if (microarea) {
+      where.microarea = microarea;
+    }
+    
+    return this.householdRepository.find({ where });
   }
 
   /**
@@ -158,11 +163,14 @@ export class HouseholdsService {
   }
 
   /**
-   * Busca todos os indivíduos que residem neste domicílio, independente da família.
+   * Busca todos os indivíduos que residem neste domicílio (diretamente ou via família).
    */
   async findIndividuals(householdId: string): Promise<any[]> {
     return this.householdRepository.manager.getRepository('Individual').find({
-      where: { household_id: householdId },
+      where: [
+        { household_id: householdId },
+        { family: { household: { id: householdId } } }
+      ] as any,
       relations: ['family', 'healthConditions'],
     });
   }

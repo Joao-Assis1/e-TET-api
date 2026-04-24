@@ -56,7 +56,8 @@ describe('IndividualsService', () => {
 
     expect(result).toEqual(individuals);
     expect(mockIndividualRepository.find).toHaveBeenCalledWith({
-      relations: ['family'],
+      where: {},
+      relations: ['family', 'household'],
     });
   });
 

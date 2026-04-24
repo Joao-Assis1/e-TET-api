@@ -47,48 +47,48 @@ describe('UsersService', () => {
     });
 
     const result = await service.create({
-      usuario: 'novo_user',
+      cpf: '12345678900',
       senha: 'senha123',
     });
 
     expect(result.id).toBe(1);
-    expect(result.usuario).toBe('novo_user');
+    expect(result.cpf).toBe('12345678900');
     expect(result.senha).not.toBe('senha123');
   });
 
   it('should throw ConflictException if user already exists', async () => {
     mockUsersRepository.findOneBy.mockResolvedValue({
       id: 1,
-      usuario: 'existente',
+      cpf: '12345678900',
     });
 
     await expect(
-      service.create({ usuario: 'existente', senha: 'senha123' }),
+      service.create({ cpf: '12345678900', senha: 'senha123' }),
     ).rejects.toThrow(ConflictException);
   });
 
-  it('should return user by username', async () => {
-    const user = { id: 1, usuario: 'admin', senha: 'hashed' };
+  it('should return user by cpf', async () => {
+    const user = { id: 1, cpf: '12345678900', senha: 'hashed' };
     mockUsersRepository.findOneBy.mockResolvedValue(user);
 
-    const result = await service.findByUsername('admin');
+    const result = await service.findByCpf('12345678900');
 
     expect(result).toEqual(user);
     expect(mockUsersRepository.findOneBy).toHaveBeenCalledWith({
-      usuario: 'admin',
+      cpf: '12345678900',
     });
   });
 
   it('should return null when user not found', async () => {
     mockUsersRepository.findOneBy.mockResolvedValue(null);
 
-    const result = await service.findByUsername('nonexistent');
+    const result = await service.findByCpf('00000000000');
 
     expect(result).toBeNull();
   });
 
   it('should verify a valid token', async () => {
-    const payload = { id: 1, usuario: 'admin' };
+    const payload = { id: 1, cpf: '12345678900' };
     mockJwtService.verifyAsync.mockResolvedValue(payload);
 
     const result = await service.verifyUserToken('valid-token');

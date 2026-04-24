@@ -20,18 +20,26 @@ describe('FamiliesService', () => {
     softRemove: jest.fn(),
   };
 
+  const mockQueryRunner = {
+    connect: jest.fn(),
+    startTransaction: jest.fn(),
+    commitTransaction: jest.fn(),
+    rollbackTransaction: jest.fn(),
+    release: jest.fn(),
+    manager: {
+      findOne: jest.fn(),
+      save: jest.fn(),
+      softDelete: jest.fn(),
+      softRemove: jest.fn(),
+      find: jest.fn(),
+    },
+  };
+
   const mockDataSource = {
-    createQueryRunner: jest.fn().mockReturnValue({
-      connect: jest.fn(),
-      startTransaction: jest.fn(),
-      commitTransaction: jest.fn(),
-      rollbackTransaction: jest.fn(),
-      release: jest.fn(),
-      manager: {
-        findOne: jest.fn(),
-        save: jest.fn(),
-      },
-    }),
+    createQueryRunner: jest.fn().mockReturnValue(mockQueryRunner),
+    manager: {
+      findOne: jest.fn(),
+    }
   };
 
   beforeEach(async () => {
@@ -55,22 +63,27 @@ describe('FamiliesService', () => {
   });
 
   it('should return all families', async () => {
-    const families = [{ id: 'uuid-1', numero_prontuario: '001' }];
+    const family = { id: 'uuid-1', numero_prontuario: '001' };
+    const families = [family];
     mockFamilyRepository.find.mockResolvedValue(families);
+    mockDataSource.manager.findOne.mockResolvedValue(null);
 
     const result = await service.findAll();
 
-    expect(result).toEqual(families);
+    expect(result[0].id).toBe('uuid-1');
+    expect(result[0].sentinels).toBeDefined();
     expect(mockFamilyRepository.find).toHaveBeenCalled();
   });
 
   it('should return a family by id', async () => {
     const family = { id: 'uuid-1', numero_prontuario: '001' };
     mockFamilyRepository.findOne.mockResolvedValue(family);
+    mockDataSource.manager.findOne.mockResolvedValue(null);
 
     const result = await service.findOne('uuid-1');
 
-    expect(result).toEqual(family);
+    expect(result.id).toBe('uuid-1');
+    expect(result.sentinels).toBeDefined();
   });
 
   it('should throw NotFoundException when family not found', async () => {
@@ -106,11 +119,12 @@ describe('FamiliesService', () => {
 
   it('should soft remove a family', async () => {
     const family = { id: 'uuid-1', numero_prontuario: '001' };
-    mockFamilyRepository.findOne.mockResolvedValue(family);
-    mockFamilyRepository.softRemove.mockResolvedValue(family);
+    mockQueryRunner.manager.findOne.mockResolvedValue(family);
+    mockQueryRunner.manager.softRemove.mockResolvedValue(family);
+    mockQueryRunner.manager.find.mockResolvedValue([]);
 
     await service.remove('uuid-1');
 
-    expect(mockFamilyRepository.softRemove).toHaveBeenCalledWith(family);
+    expect(mockQueryRunner.manager.softRemove).toHaveBeenCalledWith(family);
   });
 });

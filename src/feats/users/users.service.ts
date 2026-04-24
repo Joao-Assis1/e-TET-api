@@ -51,6 +51,13 @@ export class UsersService {
   }
 
   /**
+   * Busca um usuário pelo ID numérico.
+   */
+  async findById(id: number): Promise<User | null> {
+    return this.usersRepository.findOneBy({ id });
+  }
+
+  /**
    * Valida um token JWT e retorna o payload contido nele.
    * Utilizado pelo AuthGuard para proteger as rotas.
    */

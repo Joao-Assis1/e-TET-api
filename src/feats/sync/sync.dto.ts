@@ -233,21 +233,17 @@ export class SyncIndividualDataDto {
 export class SyncBatchPayloadDto {
   @IsOptional()
   @IsArray()
-  @Type(() => SyncHouseholdDataDto)
-  households?: SyncHouseholdDataDto[];
+  households?: any[];
 
   @IsOptional()
   @IsArray()
-  @Type(() => SyncFamilyDataDto)
-  families?: SyncFamilyDataDto[];
+  families?: any[];
 
   @IsOptional()
   @IsArray()
-  @Type(() => SyncIndividualDataDto)
-  individuals?: SyncIndividualDataDto[];
+  individuals?: any[];
 
   @IsOptional()
   @IsArray()
-  @Type(() => SyncVisitDataDto)
-  visits?: SyncVisitDataDto[];
+  visits?: any[];
 }

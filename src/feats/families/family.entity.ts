@@ -33,10 +33,10 @@ export enum FamilyIncome {
 }
 
 export enum FamilyRisk {
-  R0 = 'R0 (Sem Risco)',
-  R1 = 'R1 (Risco Baixo)',
-  R2 = 'R2 (Risco Médio)',
-  R3 = 'R3 (Risco Alto)',
+  R0 = 'Risco Baixo',
+  R1 = 'Risco Menor',
+  R2 = 'Risco Médio',
+  R3 = 'Risco Máximo',
 }
 
 export enum FamilyStatus {
