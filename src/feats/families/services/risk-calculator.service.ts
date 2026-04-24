@@ -167,7 +167,7 @@ export class RiskCalculatorService {
         error,
       );
       throw new InternalServerErrorException(
-        `Erro ao persistir estratificação: ${error.message}`,
+        'Erro interno ao persistir estratificação de risco.',
       );
     }
   }

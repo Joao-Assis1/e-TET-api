@@ -150,7 +150,7 @@ export class HouseholdsService {
       await queryRunner.rollbackTransaction();
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(
-        `Erro ao excluir domicílio em cascata: ${error.message}`,
+        'Erro ao excluir domicílio e registros vinculados.',
       );
     } finally {
       await queryRunner.release();

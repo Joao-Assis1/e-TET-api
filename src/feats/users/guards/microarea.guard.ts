@@ -9,6 +9,7 @@ import { Request } from 'express';
 import { DataSource } from 'typeorm';
 import { REQUIRE_MICROAREA_MATCH_KEY } from '../decorators/microarea.decorator';
 import { Household } from '../../households/household.entity';
+import { UserRole } from '../user.entity';
 
 @Injectable()
 export class MicroareaGuard implements CanActivate {
@@ -30,15 +31,26 @@ export class MicroareaGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const user: any = (request as any).user;
 
-    // Se o usuário não estiver injetado (AuthGuard não rodou) ou
-    // se ele não tem microárea atrelada no token, deixamos passar (permissão de gestor/admin)
-    if (!user || !user.microarea) {
+    // Se não houver usuário no request (AuthGuard não rodou), negamos por segurança
+    if (!user) {
+      return false;
+    }
+
+    // Administradores têm acesso total a todos os territórios
+    if (user.role === UserRole.ADMIN) {
       return true;
+    }
+
+    // ACS deve ter uma microárea definida
+    if (!user.microarea) {
+      throw new ForbiddenException(
+        'Acesso negado: Seu usuário não possui uma microárea vinculada.',
+      );
     }
 
     const resourceId = request.params.id;
     if (!resourceId) {
-      return true; // Não há ID para checar
+      return true; // Não há ID específico para checar neste contexto (ex: listagem global se permitida)
     }
 
     let resourceMicroarea: string | null = null;
