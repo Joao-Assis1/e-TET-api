@@ -29,8 +29,8 @@ export class LoginController {
     // Configura o cookie HttpOnly
     response.cookie('access_token', loginResult.access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Apenas HTTPS em produção
-      sameSite: 'strict', // Proteção contra CSRF
+      secure: true, // Obrigatório para SameSite: 'none'
+      sameSite: 'none', // Permite envio entre domínios diferentes (Vercel -> Render)
       maxAge: 1000 * 60 * 60 * 24, // 1 dia
     });
 
