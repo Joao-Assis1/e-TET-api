@@ -23,6 +23,7 @@ import { Visit } from '../visits/visit.entity';
 import { User } from '../users/user.entity';
 import { RiskCalculatorService } from '../families/services/risk-calculator.service';
 import { CreateRiskAssessmentDto } from '../families/dto/create-risk.dto';
+import { FamilyRiskStratification } from '../families/entities/family-risk.entity';
 
 /**
  * Serviço responsável pela sincronização de dados entre os tablets (offline) e a API central.
@@ -48,9 +49,7 @@ export class SyncService {
     if (!user)
       throw new InternalServerErrorException('Usuário não encontrado.');
 
-    const households = await this.dataSource.manager.find(Household, {
-      where: { createdBy: { id: userId } },
-    });
+    const households = await this.dataSource.manager.find(Household);
 
     const householdIds = households.map((h) => h.id);
     let families: Family[] = [];
@@ -58,10 +57,19 @@ export class SyncService {
     let visits: Visit[] = [];
 
     if (householdIds.length > 0) {
-      families = await this.dataSource.manager
+      const rawFamilies = await this.dataSource.manager
         .createQueryBuilder(Family, 'family')
         .where('family.household_id IN (:...ids)', { ids: householdIds })
         .getMany();
+
+      // Enriquecer famílias com sentinelas
+      families = await Promise.all(rawFamilies.map(async (f) => {
+        const sentinels = await this.dataSource.manager.findOne(FamilyRiskStratification, {
+          where: { familyId: f.id },
+          order: { createdAt: 'DESC' }
+        });
+        return { ...f, sentinels };
+      }));
 
       const familyIds = families.map((f) => f.id);
       if (familyIds.length > 0) {
@@ -86,6 +94,7 @@ export class SyncService {
         families,
         individuals,
         visits,
+        healthConditions: individuals.flatMap(i => i.healthConditions ? [i.healthConditions] : [])
       },
     };
   }
@@ -98,11 +107,17 @@ export class SyncService {
    */
   async processBatchSync(payload: SyncBatchPayloadDto, userId: number) {
     if (!userId) {
-      this.logger.error('Sync falhou: userId não fornecido no processBatchSync');
-      throw new BadRequestException('ID de usuário obrigatório para sincronização.');
+      this.logger.error(
+        'Sync falhou: userId não fornecido no processBatchSync',
+      );
+      throw new BadRequestException(
+        'ID de usuário obrigatório para sincronização.',
+      );
     }
-    
-    this.logger.log(`[Sync] Iniciando processamento para usuário ID: ${userId}`);
+
+    this.logger.log(
+      `[Sync] Iniciando processamento para usuário ID: ${userId}`,
+    );
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -137,7 +152,9 @@ export class SyncService {
         );
       }
 
-      this.logger.log(`Processando ${payload.households?.length || 0} domicílios, ${payload.families?.length || 0} famílias, ${payload.individuals?.length || 0} cidadãos, ${payload.visits?.length || 0} visitas`);
+      this.logger.log(
+        `Processando ${payload.households?.length || 0} domicílios, ${payload.families?.length || 0} famílias, ${payload.individuals?.length || 0} cidadãos, ${payload.visits?.length || 0} visitas`,
+      );
 
       // 1. Processar Domicílios
       await this.saveHouseholds(
@@ -189,13 +206,12 @@ export class SyncService {
         inconsistencias: inconsistencies,
       };
     } catch (error) {
-      await queryRunner.rollbackTransaction();
       this.logger.error(
         `Erro crítico na sincronização: ${error.message}`,
         error.stack,
       );
       throw new InternalServerErrorException(
-        `Falha crítica no processamento: ${(error as Error).message}`,
+        'Falha crítica no processamento do lote de sincronização.',
       );
     } finally {
       await queryRunner.release();
@@ -219,7 +235,7 @@ export class SyncService {
       const errors = await validate(dto);
 
       if (errors.length > 0) {
-        this.logger.warn(`Erro de validação no domicílio ${h.id || h._tempId}: ${JSON.stringify(errors)}`);
+        this.logger.warn(`Erro de validação no domicílio ${h.id || h._tempId}`);
         inconsistencies.households.push({
           id: h.id || h._tempId,
           erro: 'Erro de validação de esquema',
@@ -244,11 +260,17 @@ export class SyncService {
 
         if (hdEntity) {
           // RESOLUÇÃO DE CONFLITO: Timestamp
-          const incomingUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
-          const existingUpdate = hdEntity.updated_at ? new Date(hdEntity.updated_at).getTime() : 0;
-          
+          const incomingUpdate = data.updatedAt
+            ? new Date(data.updatedAt).getTime()
+            : 0;
+          const existingUpdate = hdEntity.updated_at
+            ? new Date(hdEntity.updated_at).getTime()
+            : 0;
+
           if (incomingUpdate > 0 && incomingUpdate < existingUpdate) {
-            this.logger.log(`[Sync] Domicílio ${id}: Versão do servidor é mais recente. Pulando.`);
+            this.logger.log(
+              `[Sync] Domicílio ${id}: Versão do servidor é mais recente. Pulando.`,
+            );
             savedData.households.push({ ...hdEntity, _tempId });
             continue;
           }
@@ -266,10 +288,12 @@ export class SyncService {
           savedData.households.push({ ...hdEntity, _tempId });
         }
       } catch (e) {
-        this.logger.error(`[Sync] Erro ao salvar domicílio ${h.id}: ${(e as Error).message}`);
+        this.logger.error(
+          `[Sync] Erro ao salvar domicílio ${h.id || h._tempId}: ${(e as Error).message}`,
+        );
         inconsistencies.households.push({
           id: h.id || h._tempId,
-          erro: (e as Error).message,
+          erro: 'Erro interno ao processar registro',
         });
         if (h.id) failedIds.households.add(h.id);
       }
@@ -297,11 +321,13 @@ export class SyncService {
     }
 
     for (const f of families) {
-      this.logger.log(`Salvando família ID: ${f.id || f._tempId}, Prontuário: ${f.numero_prontuario}`);
-      
+      this.logger.log(`Salvando família ID: ${f.id || f._tempId}`);
+
       // Verifica se o domicílio pai falhou
       if (f.household_id && failedIds.households.has(f.household_id)) {
-        this.logger.warn(`Família ${f.id} pulada: Domicílio pai falhou`);
+        this.logger.warn(
+          `Família ${f.id || f._tempId} pulada: Domicílio pai falhou`,
+        );
         inconsistencies.families.push({
           id: f.id || f._tempId,
           erro: 'Falha em cascata (Domicílio falhou)',
@@ -313,7 +339,7 @@ export class SyncService {
       const dto = plainToInstance(SyncFamilyDataDto, f);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        this.logger.warn(`Erro de validação na família ${f.id}: ${JSON.stringify(errors)}`);
+        this.logger.warn(`Erro de validação na família ${f.id || f._tempId}`);
         inconsistencies.families.push({
           id: f.id || f._tempId,
           erro: 'Erro de validação de dados',
@@ -365,11 +391,17 @@ export class SyncService {
 
         if (fEntity) {
           // RESOLUÇÃO DE CONFLITO: Timestamp
-          const incomingUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
-          const existingUpdate = fEntity.updated_at ? new Date(fEntity.updated_at).getTime() : 0;
-          
+          const incomingUpdate = data.updatedAt
+            ? new Date(data.updatedAt).getTime()
+            : 0;
+          const existingUpdate = fEntity.updated_at
+            ? new Date(fEntity.updated_at).getTime()
+            : 0;
+
           if (incomingUpdate > 0 && incomingUpdate < existingUpdate) {
-            this.logger.log(`[Sync] Família ${id}: Versão do servidor é mais recente. Pulando.`);
+            this.logger.log(
+              `[Sync] Família ${id}: Versão do servidor é mais recente. Pulando.`,
+            );
             savedData.families.push({ ...fEntity, _tempId });
             continue;
           }
@@ -387,10 +419,12 @@ export class SyncService {
           savedData.families.push({ ...fEntity, _tempId });
         }
       } catch (e) {
-        this.logger.error(`[Sync] Erro ao salvar família ${f.id}: ${(e as Error).message}`);
+        this.logger.error(
+          `[Sync] Erro ao salvar família ${f.id || f._tempId}: ${(e as Error).message}`,
+        );
         inconsistencies.families.push({
           id: f.id || f._tempId,
-          erro: (e as Error).message,
+          erro: 'Erro interno ao processar registro',
         });
         if (f.id) failedIds.families.add(f.id);
       }
@@ -456,9 +490,11 @@ export class SyncService {
     failedIds: any,
   ) {
     for (const i of individuals) {
-      this.logger.log(`Salvando cidadão ID: ${i.id || i._tempId}, Nome: ${i.nome_completo}`);
+      this.logger.log(`Salvando cidadão ID: ${i.id || i._tempId}`);
       if (i.family_id && failedIds.families.has(i.family_id)) {
-        this.logger.warn(`Cidadão ${i.id} pulado: Família pai falhou`);
+        this.logger.warn(
+          `Cidadão ${i.id || i._tempId} pulado: Família pai falhou`,
+        );
         inconsistencies.individuals.push({
           id: i.id || i._tempId,
           erro: 'Falha em cascata (Família falhou)',
@@ -469,7 +505,7 @@ export class SyncService {
       const dto = plainToInstance(SyncIndividualDataDto, i);
       const errors = await validate(dto);
       if (errors.length > 0) {
-        this.logger.warn(`Erro de validação no cidadão ${i.id}: ${JSON.stringify(errors)}`);
+        this.logger.warn(`Erro de validação no cidadão ${i.id || i._tempId}`);
         inconsistencies.individuals.push({
           id: i.id || i._tempId,
           erro: 'Erro de validação',
@@ -495,14 +531,19 @@ export class SyncService {
             : undefined,
           // Evitar violação de UNIQUE constraint com strings vazias no Neon
           cpf: data.cpf && data.cpf.trim() !== '' ? data.cpf : (null as any),
-          cartao_sus: data.cartao_sus && data.cartao_sus.trim() !== '' ? data.cartao_sus : (null as any),
+          cartao_sus:
+            data.cartao_sus && data.cartao_sus.trim() !== ''
+              ? data.cartao_sus
+              : (null as any),
           // Fallbacks para campos que não aceitam NULL no Neon
           possui_deficiencia: data.possui_deficiencia ?? false,
           frequenta_escola: data.frequenta_escola ?? false,
           plano_saude: data.plano_saude ?? false,
           comunidade_tradicional: data.comunidade_tradicional ?? false,
-          frequenta_cuidador_tradicional: data.frequenta_cuidador_tradicional ?? false,
-          participa_grupo_comunitario: data.participa_grupo_comunitario ?? false,
+          frequenta_cuidador_tradicional:
+            data.frequenta_cuidador_tradicional ?? false,
+          participa_grupo_comunitario:
+            data.participa_grupo_comunitario ?? false,
           possui_plano_saude: data.possui_plano_saude ?? false,
           pertence_povo_tradicional: data.pertence_povo_tradicional ?? false,
           usa_outras_praticas: data.usa_outras_praticas ?? false,
@@ -510,11 +551,17 @@ export class SyncService {
 
         if (iEnt) {
           // RESOLUÇÃO DE CONFLITO: Timestamp
-          const incomingUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
-          const existingUpdate = iEnt.updated_at ? new Date(iEnt.updated_at).getTime() : 0;
-          
+          const incomingUpdate = data.updatedAt
+            ? new Date(data.updatedAt).getTime()
+            : 0;
+          const existingUpdate = iEnt.updated_at
+            ? new Date(iEnt.updated_at).getTime()
+            : 0;
+
           if (incomingUpdate > 0 && incomingUpdate < existingUpdate) {
-            this.logger.log(`[Sync] Cidadão ${id}: Versão do servidor é mais recente. Pulando.`);
+            this.logger.log(
+              `[Sync] Cidadão ${id}: Versão do servidor é mais recente. Pulando.`,
+            );
             savedData.individuals.push({ ...iEnt, _tempId });
             continue;
           }
@@ -551,10 +598,12 @@ export class SyncService {
           savedData.individuals.push({ ...iEnt, _tempId });
         }
       } catch (e) {
-        this.logger.error(`[Sync] Erro ao salvar cidadão ${i.id}: ${(e as Error).message}`);
+        this.logger.error(
+          `[Sync] Erro ao salvar cidadão ${i.id || i._tempId}: ${(e as Error).message}`,
+        );
         inconsistencies.individuals.push({
           id: i.id || i._tempId,
-          erro: (e as Error).message,
+          erro: 'Erro interno ao processar registro',
         });
       }
     }
@@ -601,11 +650,17 @@ export class SyncService {
 
         if (vEnt) {
           // RESOLUÇÃO DE CONFLITO: Timestamp
-          const incomingUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
-          const existingUpdate = vEnt.updated_at ? new Date(vEnt.updated_at).getTime() : 0;
-          
+          const incomingUpdate = data.updatedAt
+            ? new Date(data.updatedAt).getTime()
+            : 0;
+          const existingUpdate = vEnt.updated_at
+            ? new Date(vEnt.updated_at).getTime()
+            : 0;
+
           if (incomingUpdate > 0 && incomingUpdate < existingUpdate) {
-            this.logger.log(`[Sync] Visita ${id}: Versão do servidor é mais recente. Pulando.`);
+            this.logger.log(
+              `[Sync] Visita ${id}: Versão do servidor é mais recente. Pulando.`,
+            );
             savedData.visits.push({ ...vEnt, _tempId });
             continue;
           }
@@ -622,9 +677,12 @@ export class SyncService {
           savedData.visits.push({ ...vEnt, _tempId });
         }
       } catch (e) {
+        this.logger.error(
+          `[Sync] Erro ao salvar visita ${v.id || v._tempId}: ${(e as Error).message}`,
+        );
         inconsistencies.visits.push({
           id: v.id || v._tempId,
-          erro: (e as Error).message,
+          erro: 'Erro interno ao processar registro',
         });
       }
     }

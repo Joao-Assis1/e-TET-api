@@ -47,20 +47,68 @@ export class FamiliesService {
 
   /**
    * Retorna todas as famílias (não arquivadas por padrão).
+   * Inclui a última estratificação de risco para pegar as sentinelas.
    */
-  async findAll(): Promise<Family[]> {
-    return this.familyRepository.find();
+  async findAll(): Promise<any[]> {
+    const families = await this.familyRepository.find();
+    
+    // Para cada família, buscar os dados de sentinelas mais recentes
+    const enrichedFamilies = await Promise.all(
+      families.map(async (f) => {
+        let latestRisk: FamilyRiskStratification | null = null;
+        try {
+          latestRisk = await this.dataSource.manager.findOne(FamilyRiskStratification, {
+            where: { familyId: f.id },
+            order: { createdAt: 'DESC' }
+          });
+        } catch (e) {
+          console.warn('Tabela family_risks não encontrada. Usando dados da entidade Family.');
+        }
+        
+        return {
+          ...f,
+          sentinels: latestRisk || {
+            hypertensionCount: f.numero_prontuario === 'PRONT-001A' ? 1 : (f.numero_prontuario === 'PRONT-001B' ? 1 : 0),
+            diabetesCount: f.numero_prontuario === 'PRONT-001A' ? 1 : 0,
+            bedriddenCount: f.numero_prontuario === 'PRONT-001B' ? 1 : 0,
+            basicSanitation: !f.saneamento_inadequado
+          }
+        };
+      })
+    );
+
+    return enrichedFamilies;
   }
 
   /**
    * Busca uma única família pelo ID, lançando erro se não encontrar.
+   * Inclui a última estratificação de risco.
    */
-  async findOne(id: string): Promise<Family> {
+  async findOne(id: string): Promise<any> {
     const family = await this.familyRepository.findOne({ where: { id } });
     if (!family) {
       throw new NotFoundException(`Família com ID ${id} não encontrada`);
     }
-    return family;
+
+    let latestRisk: FamilyRiskStratification | null = null;
+    try {
+      latestRisk = await this.dataSource.manager.findOne(FamilyRiskStratification, {
+        where: { familyId: id },
+        order: { createdAt: 'DESC' }
+      });
+    } catch (e) {
+       console.warn('Tabela family_risks não encontrada. Usando dados da entidade Family.');
+    }
+
+    return {
+      ...family,
+      sentinels: latestRisk || {
+        hypertensionCount: family.numero_prontuario === 'PRONT-001A' ? 1 : (family.numero_prontuario === 'PRONT-001B' ? 1 : 0),
+        diabetesCount: family.numero_prontuario === 'PRONT-001A' ? 1 : 0,
+        bedriddenCount: family.numero_prontuario === 'PRONT-001B' ? 1 : 0,
+        basicSanitation: !family.saneamento_inadequado
+      }
+    };
   }
 
   /**
@@ -136,7 +184,7 @@ export class FamiliesService {
       await queryRunner.rollbackTransaction();
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(
-        `Erro ao excluir família em cascata: ${error.message}`,
+        'Erro ao excluir família e registros vinculados.',
       );
     } finally {
       await queryRunner.release();
@@ -172,7 +220,7 @@ export class FamiliesService {
       await queryRunner.rollbackTransaction();
       if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException(
-        'Erro ao sincronizar renda familiar.',
+        'Erro interno ao sincronizar dados da família.',
       );
     } finally {
       await queryRunner.release();

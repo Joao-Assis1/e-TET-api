@@ -43,11 +43,15 @@ export class LoginService {
     const payload = {
       cpf: user.cpf,
       id: user.id,
+      role: user.role,
+      microarea: user.microarea,
     };
 
     return {
       id: user.id,
       cpf: user.cpf,
+      role: user.role,
+      microarea: user.microarea,
       access_token: this.jwtService.sign(payload),
     };
   }
