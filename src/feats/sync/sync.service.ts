@@ -56,35 +56,24 @@ export class SyncService {
     let individuals: Individual[] = [];
     let visits: Visit[] = [];
 
-    if (householdIds.length > 0) {
-      const rawFamilies = await this.dataSource.manager
-        .createQueryBuilder(Family, 'family')
-        .where('family.household_id IN (:...ids)', { ids: householdIds })
-        .getMany();
+    // Busca todos os dados em vez de filtrar apenas pelos que têm domicílio
+    const rawFamilies = await this.dataSource.manager.find(Family);
 
-      // Enriquecer famílias com sentinelas
-      families = await Promise.all(rawFamilies.map(async (f) => {
-        const sentinels = await this.dataSource.manager.findOne(FamilyRiskStratification, {
-          where: { familyId: f.id },
-          order: { createdAt: 'DESC' }
-        });
-        return { ...f, sentinels };
-      }));
+    // Enriquecer famílias com sentinelas
+    families = await Promise.all(rawFamilies.map(async (f) => {
+      const sentinels = await this.dataSource.manager.findOne(FamilyRiskStratification, {
+        where: { familyId: f.id },
+        order: { createdAt: 'DESC' }
+      });
+      return { ...f, sentinels };
+    }));
 
-      const familyIds = families.map((f) => f.id);
-      if (familyIds.length > 0) {
-        individuals = await this.dataSource.manager
-          .createQueryBuilder(Individual, 'individual')
-          .leftJoinAndSelect('individual.healthConditions', 'hc')
-          .where('individual.family_id IN (:...ids)', { ids: familyIds })
-          .getMany();
-      }
+    individuals = await this.dataSource.manager
+      .createQueryBuilder(Individual, 'individual')
+      .leftJoinAndSelect('individual.healthConditions', 'hc')
+      .getMany();
 
-      visits = await this.dataSource.manager
-        .createQueryBuilder(Visit, 'visit')
-        .where('visit.household_id IN (:...ids)', { ids: householdIds })
-        .getMany();
-    }
+    visits = await this.dataSource.manager.find(Visit);
 
     return {
       sucesso: true,
