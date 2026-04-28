@@ -33,12 +33,12 @@ export class VisitsController {
   ) {
     const user = req?.user;
     const microarea = user?.role === 'admin' ? undefined : user?.microarea;
-    
-    return this.visitsService.findAll({ 
-      householdId, 
-      familyId, 
-      individualId, 
-      microarea 
+
+    return this.visitsService.findAll({
+      householdId,
+      familyId,
+      individualId,
+      microarea,
     });
   }
 

@@ -106,14 +106,14 @@ export class VisitsService {
     microarea?: string;
   }): Promise<Visit[]> {
     const { microarea, householdId, familyId, individualId } = options || {};
-    
+
     if (microarea) {
       // Se houver microárea, aplicamos o filtro territorial rigoroso
       return this.visitsRepository.find({
         where: [
           { household: { microarea } },
           { family: { household: { microarea } } },
-          { individual: { family: { household: { microarea } } } }
+          { individual: { family: { household: { microarea } } } },
         ] as any,
         relations: ['household', 'family', 'individual'],
         order: { created_at: 'DESC' },

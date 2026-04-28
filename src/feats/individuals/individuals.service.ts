@@ -76,10 +76,12 @@ export class IndividualsService {
    */
   async findAll(microarea?: string): Promise<Individual[]> {
     return this.individualRepository.find({
-      where: microarea ? [
-        { household: { microarea } },
-        { family: { household: { microarea } } }
-      ] as any : {},
+      where: microarea
+        ? ([
+            { household: { microarea } },
+            { family: { household: { microarea } } },
+          ] as any)
+        : {},
       relations: ['family', 'household', 'family.household'],
     });
   }

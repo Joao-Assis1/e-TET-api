@@ -130,7 +130,7 @@ describe('SyncService', () => {
     const result = await service.processBatchSync(payload, 1);
 
     expect(result.sucesso).toBe(true);
-    expect(result.households.map(h => h.id)).toContain(
+    expect(result.households.map((h) => h.id)).toContain(
       'b39e6a0d-debd-4a33-9118-2e3eb8c3f58a',
     );
 
@@ -158,7 +158,7 @@ describe('SyncService', () => {
     const result = await service.processBatchSync(payload, 1);
 
     expect(result.sucesso).toBe(true);
-    expect(result.families.map(f => f.id)).toContain(
+    expect(result.families.map((f) => f.id)).toContain(
       'b39e6a0d-debd-4a33-9118-2e3eb8c3f58b',
     );
   });
