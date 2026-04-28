@@ -54,30 +54,40 @@ export class FamiliesService {
       where: microarea ? { household: { microarea } } : {},
       relations: ['household'],
     });
-    
+
     // Para cada família, buscar os dados de sentinelas mais recentes
     const enrichedFamilies = await Promise.all(
       families.map(async (f) => {
         let latestRisk: FamilyRiskStratification | null = null;
         try {
-          latestRisk = await this.dataSource.manager.findOne(FamilyRiskStratification, {
-            where: { familyId: f.id },
-            order: { createdAt: 'DESC' }
-          });
+          latestRisk = await this.dataSource.manager.findOne(
+            FamilyRiskStratification,
+            {
+              where: { familyId: f.id },
+              order: { createdAt: 'DESC' },
+            },
+          );
         } catch (e) {
-          console.warn('Tabela family_risks não encontrada. Usando dados da entidade Family.');
+          console.warn(
+            'Tabela family_risks não encontrada. Usando dados da entidade Family.',
+          );
         }
-        
+
         return {
           ...f,
           sentinels: latestRisk || {
-            hypertensionCount: f.numero_prontuario === 'PRONT-001A' ? 1 : (f.numero_prontuario === 'PRONT-001B' ? 1 : 0),
+            hypertensionCount:
+              f.numero_prontuario === 'PRONT-001A'
+                ? 1
+                : f.numero_prontuario === 'PRONT-001B'
+                  ? 1
+                  : 0,
             diabetesCount: f.numero_prontuario === 'PRONT-001A' ? 1 : 0,
             bedriddenCount: f.numero_prontuario === 'PRONT-001B' ? 1 : 0,
-            basicSanitation: !f.saneamento_inadequado
-          }
+            basicSanitation: !f.saneamento_inadequado,
+          },
         };
-      })
+      }),
     );
 
     return enrichedFamilies;
@@ -95,22 +105,32 @@ export class FamiliesService {
 
     let latestRisk: FamilyRiskStratification | null = null;
     try {
-      latestRisk = await this.dataSource.manager.findOne(FamilyRiskStratification, {
-        where: { familyId: id },
-        order: { createdAt: 'DESC' }
-      });
+      latestRisk = await this.dataSource.manager.findOne(
+        FamilyRiskStratification,
+        {
+          where: { familyId: id },
+          order: { createdAt: 'DESC' },
+        },
+      );
     } catch (e) {
-       console.warn('Tabela family_risks não encontrada. Usando dados da entidade Family.');
+      console.warn(
+        'Tabela family_risks não encontrada. Usando dados da entidade Family.',
+      );
     }
 
     return {
       ...family,
       sentinels: latestRisk || {
-        hypertensionCount: family.numero_prontuario === 'PRONT-001A' ? 1 : (family.numero_prontuario === 'PRONT-001B' ? 1 : 0),
+        hypertensionCount:
+          family.numero_prontuario === 'PRONT-001A'
+            ? 1
+            : family.numero_prontuario === 'PRONT-001B'
+              ? 1
+              : 0,
         diabetesCount: family.numero_prontuario === 'PRONT-001A' ? 1 : 0,
         bedriddenCount: family.numero_prontuario === 'PRONT-001B' ? 1 : 0,
-        basicSanitation: !family.saneamento_inadequado
-      }
+        basicSanitation: !family.saneamento_inadequado,
+      },
     };
   }
 

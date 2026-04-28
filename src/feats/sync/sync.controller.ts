@@ -33,7 +33,9 @@ export class SyncController {
       'Sincronizar Lote (Batch) de Domicílios, Famílias, Indivíduos e Visitas do tablet para a API (Calcula Risco Coelho-Savassi)',
   })
   async syncBatch(@Body() payload: SyncBatchPayloadDto, @Request() req: any) {
-    console.log(`[SyncController] Recebido lote de sync do usuário ${req.user?.id}`);
+    console.log(
+      `[SyncController] Recebido lote de sync do usuário ${req.user?.id}`,
+    );
     return this.syncService.processBatchSync(payload, req.user.id);
   }
 }

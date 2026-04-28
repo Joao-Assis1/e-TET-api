@@ -153,12 +153,18 @@ describe('HouseholdsService', () => {
 
   it('should soft remove a household', async () => {
     const household = { id: 'uuid-1', logradouro: 'Rua A' };
-    mockDataSource.createQueryRunner().manager.findOne.mockResolvedValue(household);
+    mockDataSource
+      .createQueryRunner()
+      .manager.findOne.mockResolvedValue(household);
     mockDataSource.createQueryRunner().manager.find.mockResolvedValue([]);
-    mockDataSource.createQueryRunner().manager.softRemove.mockResolvedValue(household);
+    mockDataSource
+      .createQueryRunner()
+      .manager.softRemove.mockResolvedValue(household);
 
     await service.remove('uuid-1');
 
-    expect(mockDataSource.createQueryRunner().manager.softRemove).toHaveBeenCalledWith(household);
+    expect(
+      mockDataSource.createQueryRunner().manager.softRemove,
+    ).toHaveBeenCalledWith(household);
   });
 });

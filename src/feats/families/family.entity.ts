@@ -7,6 +7,7 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import {
   IsString,
@@ -45,6 +46,8 @@ export enum FamilyStatus {
 }
 
 @Entity('families')
+@Index(['created_at'])
+@Index(['classificacao_risco'])
 export class Family {
   @PrimaryGeneratedColumn('uuid')
   id: string;

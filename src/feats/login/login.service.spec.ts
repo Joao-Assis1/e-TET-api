@@ -74,8 +74,8 @@ describe('LoginService', () => {
       senha: hashedPassword,
     });
 
-    await expect(service.login('12345678900', 'wrong-password')).rejects.toThrow(
-      UnauthorizedException,
-    );
+    await expect(
+      service.login('12345678900', 'wrong-password'),
+    ).rejects.toThrow(UnauthorizedException);
   });
 });

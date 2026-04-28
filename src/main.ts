@@ -12,6 +12,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:5173',
       'http://localhost:5174',
+      'http://localhost:8080',
       'https://e-pet.vercel.app',
       'https://e-acs-front.vercel.app',
       'https://e-acs-front.onrender.com',

@@ -18,6 +18,7 @@ import { Household } from './feats/households/household.entity';
 import { VisitsModule } from './feats/visits/visits.module';
 import { Visit } from './feats/visits/visit.entity';
 import { JwtModule } from '@nestjs/jwt';
+import { DashboardModule } from './feats/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -46,9 +47,11 @@ import { JwtModule } from '@nestjs/jwt';
               FamilyRiskStratification,
             ],
             synchronize: true,
-            ssl: databaseUrl.includes('neon.tech') ? {
-              rejectUnauthorized: false,
-            } : false,
+            ssl: databaseUrl.includes('neon.tech')
+              ? {
+                  rejectUnauthorized: false,
+                }
+              : false,
           };
         }
 
@@ -87,6 +90,7 @@ import { JwtModule } from '@nestjs/jwt';
     SyncModule,
     HouseholdsModule,
     VisitsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

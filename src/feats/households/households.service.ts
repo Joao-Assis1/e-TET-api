@@ -56,15 +56,15 @@ export class HouseholdsService {
    */
   async findAll(logradouro?: string, microarea?: string): Promise<Household[]> {
     const where: any = {};
-    
+
     if (logradouro) {
       where.logradouro = ILike(`%${logradouro}%`);
     }
-    
+
     if (microarea) {
       where.microarea = microarea;
     }
-    
+
     return this.householdRepository.find({ where });
   }
 
@@ -169,7 +169,7 @@ export class HouseholdsService {
     return this.householdRepository.manager.getRepository('Individual').find({
       where: [
         { household_id: householdId },
-        { family: { household: { id: householdId } } }
+        { family: { household: { id: householdId } } },
       ] as any,
       relations: ['family', 'healthConditions'],
     });

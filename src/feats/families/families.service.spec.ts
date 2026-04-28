@@ -39,7 +39,7 @@ describe('FamiliesService', () => {
     createQueryRunner: jest.fn().mockReturnValue(mockQueryRunner),
     manager: {
       findOne: jest.fn(),
-    }
+    },
   };
 
   beforeEach(async () => {

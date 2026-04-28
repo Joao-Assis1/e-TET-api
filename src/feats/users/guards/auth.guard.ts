@@ -13,7 +13,7 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    
+
     // Tenta obter o token do cookie primeiro (HttpOnly)
     let token = request.cookies?.access_token;
 
@@ -31,7 +31,7 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.usersService.verifyUserToken(token);
-      
+
       // Validação extra: O usuário ainda existe no banco?
       // Isso evita erros 500 em serviços que dependem do ID do usuário
       const user = await this.usersService.findById(payload.id);

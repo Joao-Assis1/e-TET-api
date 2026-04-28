@@ -8,6 +8,7 @@ import {
   ManyToOne,
   OneToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { IndividualHealth } from './individual-health.entity';
 import {
@@ -131,6 +132,7 @@ export enum SituacaoPeso {
 // --- ENTITIES ---
 
 @Entity('individuals')
+@Index(['created_at'])
 export class Individual {
   @PrimaryGeneratedColumn('uuid')
   id: string;

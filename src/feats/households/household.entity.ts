@@ -8,6 +8,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import {
   IsString,
@@ -106,6 +107,8 @@ export enum AnimalType {
 }
 
 @Entity('households')
+@Index(['bairro'])
+@Index(['created_at'])
 export class Household {
   @PrimaryGeneratedColumn('uuid')
   id: string;
