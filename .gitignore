@@ -82,3 +82,6 @@ spec.md
 tlc-spec-driven/
 create-test-user.ts
 test-integration-sync.js
+
+GEMINI.md
+.gitignore
