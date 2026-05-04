@@ -110,114 +110,142 @@ export enum AnimalType {
 @Index(['bairro'])
 @Index(['created_at'])
 export class Household {
+  @ApiProperty({ example: 'uuid-do-domicilio' })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @ApiPropertyOptional({ example: '12345-678' })
   @Column({ type: 'varchar', nullable: true })
   cep: string | null;
 
+  @ApiProperty({ example: 'Rua Principal' })
   @Column({ type: 'varchar' })
   logradouro: string;
 
+  @ApiProperty({ example: '100' })
   @Column({ type: 'varchar' })
   numero: string;
 
+  @ApiPropertyOptional({ example: 'Apartamento 2' })
   @Column({ type: 'varchar', nullable: true })
   complemento: string | null;
 
+  @ApiProperty({ example: 'Centro' })
   @Column({ type: 'varchar' })
   bairro: string;
 
+  @ApiPropertyOptional({ example: '001' })
   @Column({ type: 'varchar', nullable: true })
   microarea: string | null;
 
+  @ApiPropertyOptional({ example: 'Próximo à praça' })
   @Column({ type: 'varchar', nullable: true })
   ponto_referencia: string | null;
 
+  @ApiPropertyOptional({ example: '(11) 5555-5555' })
   @Column({ type: 'varchar', nullable: true })
   telefone_residencial: string | null;
 
+  @ApiPropertyOptional({ example: '(11) 99999-9999' })
   @Column({ type: 'varchar', nullable: true })
   telefone_contato: string | null;
 
+  @ApiPropertyOptional({ example: '-23.5505,-46.6333' })
   @Column({ type: 'varchar', nullable: true })
   coordenadas_gps: string | null;
 
+  @ApiProperty({ default: false })
   @Column({ type: 'boolean', default: false })
   recusa_cadastro: boolean;
 
+  @ApiPropertyOptional({ example: '2024-03-20T10:00:00Z' })
   @Column({ nullable: true })
   data_ultima_visita: Date;
 
+  @ApiPropertyOptional({ enum: HousingSituation })
   @Column({
     type: 'varchar',
     nullable: true,
   })
   situacao_moradia: HousingSituation | null;
 
+  @ApiPropertyOptional({ enum: HouseholdLocation })
   @Column({
     type: 'varchar',
     nullable: true,
   })
   localizacao: HouseholdLocation | null;
 
+  @ApiPropertyOptional({ enum: HouseholdType })
   @Column({
     type: 'varchar',
     nullable: true,
   })
   tipo_domicilio: HouseholdType | null;
 
+  @ApiPropertyOptional({ example: 4 })
   @Column({ type: 'int', nullable: true })
   numero_moradores: number | null;
 
+  @ApiPropertyOptional({ example: 5 })
   @Column({ type: 'int', nullable: true })
   numero_comodos: number | null;
 
+  @ApiPropertyOptional({ enum: ConstructionMaterial })
   @Column({
     type: 'varchar',
     nullable: true,
   })
   material_construcao: ConstructionMaterial | null;
 
+  @ApiPropertyOptional({ enum: HouseholdAccess })
   @Column({
     type: 'varchar',
     nullable: true,
   })
   tipo_acesso_domicilio: HouseholdAccess | null;
 
+  @ApiPropertyOptional({ enum: WaterSupply })
   @Column({
     type: 'varchar',
     nullable: true,
   })
   abastecimento_agua: WaterSupply | null;
 
+  @ApiPropertyOptional({ enum: WaterTreatment })
   @Column({
     type: 'varchar',
     nullable: true,
   })
   agua_consumo: WaterTreatment | null;
 
+  @ApiPropertyOptional({ enum: SewageDisposal })
   @Column({
     type: 'varchar',
     nullable: true,
   })
   escoamento_banheiro: SewageDisposal | null;
 
+  @ApiPropertyOptional({ enum: TrashDestination })
   @Column({
     type: 'varchar',
     nullable: true,
   })
   destino_lixo: TrashDestination | null;
 
+  @ApiProperty({ default: true })
   @Column({ type: 'boolean', default: false })
   energia_eletrica: boolean;
 
+  @ApiProperty({ example: false })
   @Column({ type: 'boolean' })
   possui_animais: boolean;
 
+  @ApiPropertyOptional({ example: 0 })
   @Column({ type: 'int', nullable: true })
   quantidade_animais: number | null;
 
+  @ApiPropertyOptional({ enum: AnimalType, isArray: true })
   @Column({ type: 'simple-json', nullable: true })
   animais_quais: AnimalType[] | null;
 
@@ -228,12 +256,15 @@ export class Household {
   @JoinColumn({ name: 'created_by_id' })
   createdBy: User;
 
+  @ApiProperty()
   @CreateDateColumn()
   created_at: Date;
 
+  @ApiProperty()
   @UpdateDateColumn()
   updated_at: Date;
 
+  @ApiPropertyOptional()
   @DeleteDateColumn()
   deleted_at: Date;
 

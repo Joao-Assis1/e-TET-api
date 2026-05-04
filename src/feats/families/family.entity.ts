@@ -49,48 +49,60 @@ export enum FamilyStatus {
 @Index(['created_at'])
 @Index(['classificacao_risco'])
 export class Family {
+  @ApiProperty({ example: 'uuid-da-familia' })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @ApiProperty({ example: 'PR-12345' })
   @Column({ unique: true })
   numero_prontuario: string;
 
+  @ApiPropertyOptional({ enum: FamilyIncome })
   @Column({
     type: 'varchar',
     nullable: true,
   })
   renda_familiar: FamilyIncome | null;
 
+  @ApiProperty({ example: 4 })
   @Column({ type: 'int', default: 0 })
   membros_declarados: number;
 
+  @ApiPropertyOptional({ example: '01/2020' })
   @Column({ type: 'varchar', nullable: true })
   reside_desde: string;
 
+  @ApiPropertyOptional({ example: 5 })
   @Column({ type: 'int', nullable: true })
   pontuacao_risco: number;
 
+  @ApiPropertyOptional({ enum: FamilyRisk })
   @Column({
     type: 'varchar',
     nullable: true,
   })
   classificacao_risco: FamilyRisk | null;
 
+  @ApiProperty({ enum: FamilyStatus, default: FamilyStatus.RESIDENTE })
   @Column({
     type: 'varchar',
     default: FamilyStatus.RESIDENTE,
   })
   status_mudanca: FamilyStatus;
 
+  @ApiProperty({ default: false })
   @Column({ type: 'boolean', default: false })
   saneamento_inadequado: boolean;
 
+  @ApiProperty({ default: false })
   @Column({ type: 'boolean', default: false })
   arquivada: boolean;
 
+  @ApiPropertyOptional({ type: 'string', isArray: true })
   @Column({ type: 'simple-json', nullable: true })
   historico_domicilios: string[];
 
+  @ApiPropertyOptional({ example: 'uuid-do-domicilio' })
   @Column({ name: 'household_id', type: 'uuid', nullable: true })
   household_id: string | null;
 
@@ -101,12 +113,15 @@ export class Family {
   @JoinColumn({ name: 'household_id' })
   household: Household | null;
 
+  @ApiProperty()
   @CreateDateColumn()
   created_at: Date;
 
+  @ApiProperty()
   @UpdateDateColumn()
   updated_at: Date;
 
+  @ApiPropertyOptional()
   @DeleteDateColumn()
   deleted_at: Date;
 

@@ -31,18 +31,22 @@ export class CreateUserDto {
 
 @Entity('users')
 export class User {
+  @ApiProperty({ example: 1 })
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty({ example: '12345678900' })
   @Column({ unique: true })
   cpf: string;
 
   @Column()
   senha: string;
 
+  @ApiProperty({ enum: UserRole, default: UserRole.ACS })
   @Column({ type: 'varchar', default: UserRole.ACS })
   role: UserRole;
 
+  @ApiPropertyOptional({ example: '001' })
   @Column({ type: 'varchar', nullable: true })
   microarea: string | null;
 

@@ -6,7 +6,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { SyncService } from './sync.service';
 import { SyncBatchPayloadDto } from './sync.dto';
 import { AuthGuard } from '../users/guards/auth.guard';
@@ -22,6 +22,7 @@ export class SyncController {
   @ApiOperation({
     summary: 'Baixar base de dados inicial para o tablet (Offline-First)',
   })
+  @ApiOkResponse({ description: 'Retorna todos os dados necessários para o funcionamento offline' })
   async getInitialData(@Request() req: any) {
     // req.user.id contém o ID gerado pelo JwtService (conforme definido no LoginService)
     return this.syncService.getInitialSyncData(req.user.id);
@@ -32,6 +33,7 @@ export class SyncController {
     summary:
       'Sincronizar Lote (Batch) de Domicílios, Famílias, Indivíduos e Visitas do tablet para a API (Calcula Risco Coelho-Savassi)',
   })
+  @ApiOkResponse({ description: 'Retorna o status do processamento do lote' })
   async syncBatch(@Body() payload: SyncBatchPayloadDto, @Request() req: any) {
     console.log(
       `[SyncController] Recebido lote de sync do usuário ${req.user?.id}`,

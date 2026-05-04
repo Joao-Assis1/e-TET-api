@@ -71,75 +71,96 @@ export enum ActiveSearchReason {
 
 @Entity('visits')
 export class Visit {
+  @ApiProperty({ example: 'uuid-da-visita' })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   // Relações Polimórficas (Opcionais)
+  @ApiPropertyOptional({ example: 'uuid-do-domicilio' })
   @ManyToOne(() => Household, { nullable: true })
   @JoinColumn({ name: 'household_id' })
   household: Household | null;
 
+  @ApiPropertyOptional({ example: 'uuid-da-familia' })
   @ManyToOne(() => Family, { nullable: true })
   @JoinColumn({ name: 'family_id' })
   family: Family | null;
 
+  @ApiPropertyOptional({ example: 'uuid-do-individuo' })
   @ManyToOne(() => Individual, { nullable: true })
   @JoinColumn({ name: 'individual_id' })
   individual: Individual | null;
 
   // Desfecho
+  @ApiProperty({ example: true })
   @Column({ type: 'boolean', default: false })
   visita_realizada: boolean;
 
+  @ApiPropertyOptional({ enum: DesfechoVisita })
   @Column({ type: 'varchar', nullable: true })
   desfecho: DesfechoVisita | null;
 
+  @ApiProperty({ default: false })
   @Column({ type: 'boolean', default: false })
   acompanhada_por_outro_profissional: boolean;
 
   // Temas / Acompanhamento
+  @ApiPropertyOptional({ enum: FollowUpReason, isArray: true })
   @Column({ type: 'simple-array', nullable: true })
   motivo: FollowUpReason[];
 
+  @ApiPropertyOptional({ enum: ActiveSearchReason, isArray: true })
   @Column({ type: 'simple-array', nullable: true })
   motivo_busca_ativa: ActiveSearchReason[];
 
   // Antropometria (Para Individual)
+  @ApiPropertyOptional({ example: 70.5 })
   @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
   peso: number | null;
 
+  @ApiPropertyOptional({ example: 1.75 })
   @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
   altura: number | null;
 
   // Controle Ambiental / Vetorial (Para Imóvel ou Família)
+  @ApiProperty({ default: false })
   @Column({ type: 'boolean', default: false })
   imovel_foco: boolean;
 
+  @ApiProperty({ default: false })
   @Column({ type: 'boolean', default: false })
   acao_educativa: boolean;
 
+  @ApiProperty({ default: false })
   @Column({ type: 'boolean', default: false })
   tratamento_focal: boolean;
 
+  @ApiProperty({ default: false })
   @Column({ type: 'boolean', default: false })
   inspecao_armadilha: boolean;
 
+  @ApiProperty({ default: false })
   @Column({ type: 'boolean', default: false })
   registro_mecanico: boolean;
 
   // Geral
+  @ApiProperty({ example: '2024-03-20' })
   @Column({ type: 'date' })
   data_visita: Date;
 
+  @ApiProperty({ enum: TurnoVisita })
   @Column({ type: 'varchar' })
   turno: TurnoVisita;
 
+  @ApiProperty()
   @CreateDateColumn()
   created_at: Date;
 
+  @ApiProperty()
   @UpdateDateColumn()
   updated_at: Date;
 
+  @ApiPropertyOptional()
   @DeleteDateColumn()
   deleted_at: Date;
 

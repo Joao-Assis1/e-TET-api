@@ -134,9 +134,11 @@ export enum SituacaoPeso {
 @Entity('individuals')
 @Index(['created_at'])
 export class Individual {
+  @ApiProperty({ example: 'uuid-do-individuo' })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @ApiProperty({ example: 'uuid-da-familia' })
   @Column({ name: 'family_id', type: 'uuid' })
   family_id: string;
 
@@ -144,6 +146,7 @@ export class Individual {
   @JoinColumn({ name: 'family_id' })
   family: Family;
 
+  @ApiPropertyOptional({ example: 'uuid-do-domicilio' })
   @Column({ name: 'household_id', type: 'uuid', nullable: true })
   household_id: string | null;
 
@@ -152,112 +155,147 @@ export class Individual {
   household: Household | null;
 
   // Bloco 1: Identificação Básica
+  @ApiProperty({ default: false })
   @Column({ default: false })
   recusa_cadastro: boolean;
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   arquivado: boolean;
 
+  @ApiPropertyOptional()
   @Column({ type: 'varchar', nullable: true })
   motivo_saida: string;
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   is_responsavel: boolean;
 
+  @ApiPropertyOptional({ example: '700000000000001' })
   @Column({ type: 'varchar', nullable: true, unique: true })
   cartao_sus: string;
 
+  @ApiPropertyOptional({ example: '12345678901' })
   @Column({ type: 'varchar', nullable: true, unique: true })
   cpf: string;
 
+  @ApiProperty({ example: 'João da Silva' })
   @Column()
   nome_completo: string;
 
+  @ApiPropertyOptional({ example: 'Joãozinho' })
   @Column({ type: 'varchar', nullable: true })
   nome_social: string;
 
+  @ApiProperty({ example: '1990-01-01' })
   @Column({ type: 'date' })
   data_nascimento: Date;
 
+  @ApiProperty({ enum: Sexo })
   @Column({ type: 'varchar' })
   sexo: Sexo;
 
+  @ApiProperty({ enum: RacaCor })
   @Column({ type: 'varchar' })
   raca_cor: RacaCor;
 
+  @ApiProperty({ enum: Nacionalidade, default: Nacionalidade.BRASILEIRA })
   @Column({ type: 'varchar', default: Nacionalidade.BRASILEIRA })
   nacionalidade: Nacionalidade;
 
+  @ApiPropertyOptional({ enum: Kinship })
   @Column({ type: 'varchar', nullable: true })
   parentesco: Kinship | null;
 
   // Bloco 2: Sociodemográfico 1
+  @ApiPropertyOptional({ enum: EducationLevel })
   @Column({ type: 'varchar', nullable: true })
   escolaridade: EducationLevel | null;
 
+  @ApiPropertyOptional({ enum: JobStatus })
   @Column({ type: 'varchar', nullable: true })
   situacao_mercado_trabalho: JobStatus | null;
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   frequenta_escola: boolean;
 
   // Bloco 3: Sociodemográfico 2
+  @ApiPropertyOptional({ enum: SexualOrientation })
   @Column({ type: 'varchar', nullable: true })
   orientacao_sexual: SexualOrientation | null;
 
+  @ApiPropertyOptional({ enum: GenderIdentity })
   @Column({ type: 'varchar', nullable: true })
   identidade_genero: GenderIdentity | null;
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   possui_deficiencia: boolean;
 
+  @ApiPropertyOptional({ enum: DisabilityType, isArray: true })
   @Column({ type: 'simple-array', nullable: true })
   deficiencias: DisabilityType[];
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   plano_saude: boolean;
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   comunidade_tradicional: boolean;
 
+  @ApiPropertyOptional()
   @Column({ type: 'varchar', nullable: true })
   nome_comunidade: string;
 
   // Novos campos Sync V2
+  @ApiPropertyOptional({ example: 'joao@email.com' })
   @Column({ type: 'varchar', nullable: true })
   email: string | null;
 
+  @ApiPropertyOptional({ example: '(11) 98888-7777' })
   @Column({ type: 'varchar', nullable: true })
   telefone_celular: string | null;
 
+  @ApiPropertyOptional({ example: 'Maria da Silva' })
   @Column({ type: 'varchar', nullable: true })
   nome_mae: string | null;
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   nome_mae_desconhecido: boolean;
 
+  @ApiPropertyOptional({ example: 'José da Silva' })
   @Column({ type: 'varchar', nullable: true })
   nome_pai: string | null;
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   nome_pai_desconhecido: boolean;
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   frequenta_cuidador_tradicional: boolean;
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   participa_grupo_comunitario: boolean;
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   possui_plano_saude: boolean;
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   pertence_povo_tradicional: boolean;
 
+  @ApiProperty({ default: false })
   @Column({ default: false })
   usa_outras_praticas: boolean;
 
   // Relacionamento OneToOne para as Condições de Saúde (Blocos 4 e 5)
+  @ApiProperty({ type: () => IndividualHealth })
   @OneToOne(() => IndividualHealth, (health) => health.individual, {
     cascade: true,
     eager: true,
@@ -266,12 +304,15 @@ export class Individual {
   healthConditions: IndividualHealth;
 
   // Auditoria
+  @ApiProperty()
   @CreateDateColumn()
   created_at: Date;
 
+  @ApiProperty()
   @UpdateDateColumn()
   updated_at: Date;
 
+  @ApiPropertyOptional()
   @DeleteDateColumn()
   deleted_at: Date;
 
@@ -383,10 +424,12 @@ export class IndividualHealthDto {
   @IsEnum(StreetTime)
   tempo_rua?: StreetTime;
 
+  @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()
   recebe_beneficio?: boolean;
 
+  @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()
   referencia_familiar?: boolean;

@@ -6,9 +6,9 @@ import {
   Get,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
 import { UsersService } from './users.service';
-import { CreateUserDto, UserRole } from './user.entity';
+import { CreateUserDto, UserRole, User } from './user.entity';
 import { AuthGuard } from './guards/auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
@@ -19,11 +19,11 @@ import { Roles } from './decorators/roles.decorator';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @Post('register')
   @ApiOperation({ summary: 'Cadastrar novo usuário (exige admin)' })
+  @ApiCreatedResponse({ description: 'Usuário cadastrado com sucesso', type: User })
   async register(@Body() createUserDto: CreateUserDto) {
     const user = await this.usersService.create(createUserDto);
     const { senha, ...result } = user;
@@ -32,6 +32,8 @@ export class UsersController {
 
   @UseGuards(AuthGuard)
   @Get('profile')
+  @ApiOperation({ summary: 'Obter perfil do usuário logado' })
+  @ApiOkResponse({ type: User })
   getProfile(@Request() req) {
     return req.user;
   }

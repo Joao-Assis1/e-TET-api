@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBody, ApiOkResponse } from '@nestjs/swagger';
 import { LoginService } from './login.service';
+import { User } from '../users/user.entity';
 import * as express from 'express';
 
 @ApiTags('Autenticação')
@@ -19,6 +20,7 @@ export class LoginController {
       },
     },
   })
+  @ApiOkResponse({ description: 'Login realizado com sucesso', type: User })
   async login(
     @Body('cpf') cpf: string,
     @Body('senha') senha: string,
