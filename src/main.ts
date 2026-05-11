@@ -9,16 +9,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:8080',
-      'https://e-pet.vercel.app',
-      'https://e-acs-front.vercel.app',
-      'https://e-acs-front.onrender.com',
-      'https://e-tet-api.onrender.com',
-      /vercel\.app$/, // Permite qualquer preview da vercel
-    ],
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? [
+            'https://e-pet.vercel.app',
+            'https://e-acs-front.vercel.app',
+            'https://e-acs-front.onrender.com',
+            'https://e-tet-api.onrender.com',
+          ]
+        : true, // Em dev, aceita qualquer origem (inclusive o IP do seu celular)
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Accept, Authorization',
