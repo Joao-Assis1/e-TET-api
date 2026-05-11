@@ -28,16 +28,16 @@ export class LoginController {
   ) {
     const loginResult = await this.loginService.login(cpf, senha);
 
-    // Configura o cookie HttpOnly
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // Configura o cookie HttpOnly (Funciona em navegadores que permitem cookies de terceiros)
     response.cookie('access_token', loginResult.access_token, {
       httpOnly: true,
-      secure: true, // Obrigatório para SameSite: 'none'
-      sameSite: 'none', // Permite envio entre domínios diferentes (Vercel -> Render)
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax', // 'none' é necessário para domínios diferentes (Vercel/Render)
       maxAge: 1000 * 60 * 60 * 24, // 1 dia
     });
 
-    // Retorna os dados do usuário sem o token (opcional, mas comum para UI)
-    const { access_token, ...userData } = loginResult;
-    return userData;
+    return loginResult;
   }
 }
