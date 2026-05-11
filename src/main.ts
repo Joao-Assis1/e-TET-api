@@ -12,8 +12,7 @@ async function bootstrap() {
     origin:
       process.env.NODE_ENV === 'production'
         ? [
-            'https://e-pet.vercel.app',
-            'https://e-acs-front.vercel.app',
+            'https://e-pet-wine.vercel.app/',
             'https://e-acs-front.onrender.com',
             'https://e-tet-api.onrender.com',
           ]
