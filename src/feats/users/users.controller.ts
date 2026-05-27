@@ -6,7 +6,13 @@ import {
   Get,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto, UserRole, User } from './user.entity';
 import { AuthGuard } from './guards/auth.guard';
@@ -23,7 +29,10 @@ export class UsersController {
   @Roles(UserRole.ADMIN)
   @Post('register')
   @ApiOperation({ summary: 'Cadastrar novo usuário (exige admin)' })
-  @ApiCreatedResponse({ description: 'Usuário cadastrado com sucesso', type: User })
+  @ApiCreatedResponse({
+    description: 'Usuário cadastrado com sucesso',
+    type: User,
+  })
   async register(@Body() createUserDto: CreateUserDto) {
     const user = await this.usersService.create(createUserDto);
     const { senha, ...result } = user;

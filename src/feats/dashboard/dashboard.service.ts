@@ -61,7 +61,9 @@ export class DashboardService {
           bairro: filters.bairro,
         });
       } else if (alias === 'household') {
-        query.andWhere('household.bairro = :bairro', { bairro: filters.bairro });
+        query.andWhere('household.bairro = :bairro', {
+          bairro: filters.bairro,
+        });
       }
     }
     return query;
@@ -179,11 +181,20 @@ export class DashboardService {
     this.applyFilters(query, filters, 'health', 'individual.household');
 
     const result = await query
-      .select('SUM(CASE WHEN health.hipertensao_arterial THEN 1 ELSE 0 END)', 'hypertension')
+      .select(
+        'SUM(CASE WHEN health.hipertensao_arterial THEN 1 ELSE 0 END)',
+        'hypertension',
+      )
       .addSelect('SUM(CASE WHEN health.diabetes THEN 1 ELSE 0 END)', 'diabetes')
       .addSelect('SUM(CASE WHEN health.gestante THEN 1 ELSE 0 END)', 'pregnant')
-      .addSelect('SUM(CASE WHEN health.acamado_domiciliado THEN 1 ELSE 0 END)', 'bedridden')
-      .addSelect('SUM(CASE WHEN health.doenca_mental THEN 1 ELSE 0 END)', 'mentalHealth')
+      .addSelect(
+        'SUM(CASE WHEN health.acamado_domiciliado THEN 1 ELSE 0 END)',
+        'bedridden',
+      )
+      .addSelect(
+        'SUM(CASE WHEN health.doenca_mental THEN 1 ELSE 0 END)',
+        'mentalHealth',
+      )
       .getRawOne<HealthResult>();
 
     return {
@@ -244,11 +255,18 @@ export class DashboardService {
     const result = await query
       .select('household.abastecimento_agua', 'water')
       .addSelect('household.destino_lixo', 'waste')
-      .addSelect('SUM(CASE WHEN family.saneamento_inadequado THEN 1 ELSE 0 END)', 'inadequateSanitation')
+      .addSelect(
+        'SUM(CASE WHEN family.saneamento_inadequado THEN 1 ELSE 0 END)',
+        'inadequateSanitation',
+      )
       .leftJoin('household.families', 'family')
       .groupBy('household.abastecimento_agua')
       .addGroupBy('household.destino_lixo')
-      .getRawMany<{ water: string; waste: string; inadequateSanitation: string }>();
+      .getRawMany<{
+        water: string;
+        waste: string;
+        inadequateSanitation: string;
+      }>();
 
     const totalSaneamento = result.reduce(
       (acc, curr) => acc + parseInt(curr.inadequateSanitation, 10),

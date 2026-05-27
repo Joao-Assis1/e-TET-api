@@ -47,7 +47,11 @@ export class HouseholdsController {
   @Get()
   @ApiOperation({ summary: 'Listar todos os domicílios' })
   @ApiOkResponse({ type: [Household] })
-  @ApiQuery({ name: 'logradouro', required: false, description: 'Filtro por logradouro' })
+  @ApiQuery({
+    name: 'logradouro',
+    required: false,
+    description: 'Filtro por logradouro',
+  })
   findAll(@Req() req: any, @Query('logradouro') logradouro?: string) {
     const user = req.user;
     // Admins podem ver tudo, ACS vê apenas sua microárea

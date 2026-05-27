@@ -39,9 +39,18 @@ describe('LoginController', () => {
     };
     mockLoginService.login.mockResolvedValue(mockResponse);
 
-    const result = await controller.login('admin', 'admin123');
+    const mockRes = {
+      cookie: jest.fn(),
+    } as any;
+
+    const result = await controller.login('admin', 'admin123', mockRes);
 
     expect(loginService.login).toHaveBeenCalledWith('admin', 'admin123');
+    expect(mockRes.cookie).toHaveBeenCalledWith(
+      'access_token',
+      'jwt-token',
+      expect.any(Object),
+    );
     expect(result).toEqual(mockResponse);
   });
 
@@ -50,7 +59,11 @@ describe('LoginController', () => {
       new UnauthorizedException('Usuário ou senha inválidos'),
     );
 
-    await expect(controller.login('wrong', 'wrong')).rejects.toThrow(
+    const mockRes = {
+      cookie: jest.fn(),
+    } as any;
+
+    await expect(controller.login('wrong', 'wrong', mockRes)).rejects.toThrow(
       UnauthorizedException,
     );
   });

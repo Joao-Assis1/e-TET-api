@@ -12,7 +12,14 @@ import {
 } from '@nestjs/common';
 import { VisitsService } from './visits.service';
 import { CreateVisitDto, UpdateVisitDto, Visit } from './visit.entity';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiOkResponse, ApiCreatedResponse, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { AuthGuard } from '../users/guards/auth.guard';
 
 @ApiTags('Visitas')
@@ -32,9 +39,21 @@ export class VisitsController {
   @Get()
   @ApiOperation({ summary: 'Listar visitas domiciliares' })
   @ApiOkResponse({ type: [Visit] })
-  @ApiQuery({ name: 'household_id', required: false, description: 'Filtrar por ID do domicílio' })
-  @ApiQuery({ name: 'family_id', required: false, description: 'Filtrar por ID da família' })
-  @ApiQuery({ name: 'individual_id', required: false, description: 'Filtrar por ID do indivíduo' })
+  @ApiQuery({
+    name: 'household_id',
+    required: false,
+    description: 'Filtrar por ID do domicílio',
+  })
+  @ApiQuery({
+    name: 'family_id',
+    required: false,
+    description: 'Filtrar por ID da família',
+  })
+  @ApiQuery({
+    name: 'individual_id',
+    required: false,
+    description: 'Filtrar por ID do indivíduo',
+  })
   findAll(
     @Query('household_id') householdId?: string,
     @Query('family_id') familyId?: string,

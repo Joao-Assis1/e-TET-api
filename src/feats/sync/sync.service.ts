@@ -25,6 +25,13 @@ import { FamilyRiskStratification } from '../families/entities/family-risk.entit
 export class SyncService {
   private readonly logger = new Logger(SyncService.name);
 
+  private isValidUuid(val: any): boolean {
+    if (!val || typeof val !== 'string') return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      val,
+    );
+  }
+
   constructor(
     private readonly dataSource: DataSource,
     private readonly riskCalculatorService: RiskCalculatorService,
@@ -183,7 +190,7 @@ export class SyncService {
       await queryRunner.rollbackTransaction();
       this.logger.error(`Erro crítico na sincronização: ${error.message}`);
       throw new InternalServerErrorException(
-        'Falha crítica no processamento do lote.',
+        'Falha crítica no processamento do lote de sincronização.',
       );
     } finally {
       await queryRunner.release();
@@ -253,9 +260,72 @@ export class SyncService {
       }
     }
 
+    const householdIdsInPayload = families
+      .map((f) => f.household_id)
+      .filter((hid) => this.isValidUuid(hid));
+
+    const existingHouseholds =
+      householdIdsInPayload.length > 0
+        ? await queryRunner.manager.find(Household, {
+            where: { id: In(householdIdsInPayload) },
+            withDeleted: true,
+          })
+        : [];
+    const existingHouseholdIds = new Set(existingHouseholds.map((h) => h.id));
+
     for (const f of families) {
       try {
         const { id, _tempId, household_id, sentinels, ...data } = f;
+
+        // 1. Validar UUID da família
+        if (id && !this.isValidUuid(id)) {
+          inconsistencies.families.push({
+            id: id || _tempId,
+            erro: `ID de família inválido (não é um UUID): ${id}`,
+          });
+          failedIds.families.add(id || _tempId);
+          continue;
+        }
+
+        // 2. Validar chave estrangeira (household_id)
+        if (household_id) {
+          if (!this.isValidUuid(household_id)) {
+            inconsistencies.families.push({
+              id: id || _tempId,
+              erro: `ID do Domicílio inválido (não é um UUID): ${household_id}`,
+            });
+            failedIds.families.add(id || _tempId);
+            continue;
+          }
+          if (
+            !existingHouseholdIds.has(household_id) &&
+            !savedData.households.some((h) => h.id === household_id)
+          ) {
+            inconsistencies.families.push({
+              id: id || _tempId,
+              erro: `Domicílio associado não encontrado: ${household_id}`,
+            });
+            failedIds.families.add(id || _tempId);
+            continue;
+          }
+        }
+
+        // 3. Validar unicidade do prontuário
+        if (data.numero_prontuario) {
+          const dup = await queryRunner.manager.findOne(Family, {
+            where: { numero_prontuario: data.numero_prontuario },
+            withDeleted: true,
+          });
+          if (dup && dup.id !== id) {
+            inconsistencies.families.push({
+              id: id || _tempId,
+              erro: `Conflito de prontuário: ${data.numero_prontuario} já cadastrado em outra família (${dup.id})`,
+            });
+            failedIds.families.add(id || _tempId);
+            continue;
+          }
+        }
+
         const familyInds = (id ? individualsByFamily.get(id) : []) || [];
 
         // Prioriza sentinelas enviadas pelo frontend, caso existam (Estratificação Manual)
@@ -337,9 +407,132 @@ export class SyncService {
     inconsistencies: any,
     savedData: any,
   ) {
+    const familyIdsInPayload = individuals
+      .map((i) => i.family_id)
+      .filter((fid) => this.isValidUuid(fid));
+
+    const existingFamilies =
+      familyIdsInPayload.length > 0
+        ? await queryRunner.manager.find(Family, {
+            where: { id: In(familyIdsInPayload) },
+            withDeleted: true,
+          })
+        : [];
+    const existingFamilyIds = new Set(existingFamilies.map((f) => f.id));
+
+    const householdIdsInInds = individuals
+      .map((i) => i.household_id)
+      .filter((hid) => this.isValidUuid(hid));
+
+    const existingHouseholdsForInds =
+      householdIdsInInds.length > 0
+        ? await queryRunner.manager.find(Household, {
+            where: { id: In(householdIdsInInds) },
+            withDeleted: true,
+          })
+        : [];
+    const existingHouseholdIdsForInds = new Set(
+      existingHouseholdsForInds.map((h) => h.id),
+    );
+
     for (const i of individuals) {
       try {
-        const { id, _tempId, family_id, healthConditions, ...data } = i;
+        const {
+          id,
+          _tempId,
+          family_id,
+          household_id,
+          healthConditions,
+          ...data
+        } = i;
+
+        // 1. Validar UUID do cidadão
+        if (id && !this.isValidUuid(id)) {
+          inconsistencies.individuals.push({
+            id: id || _tempId,
+            erro: `ID de cidadão inválido (não é um UUID): ${id}`,
+          });
+          continue;
+        }
+
+        // 2. Validar chave estrangeira (family_id)
+        if (family_id) {
+          if (!this.isValidUuid(family_id)) {
+            inconsistencies.individuals.push({
+              id: id || _tempId,
+              erro: `ID da Família inválido (não é um UUID): ${family_id}`,
+            });
+            continue;
+          }
+          if (
+            !existingFamilyIds.has(family_id) &&
+            !savedData.families.some((f) => f.id === family_id)
+          ) {
+            inconsistencies.individuals.push({
+              id: id || _tempId,
+              erro: `Família associada não encontrada: ${family_id}`,
+            });
+            continue;
+          }
+        }
+
+        // 3. Validar chave estrangeira (household_id)
+        if (household_id) {
+          if (!this.isValidUuid(household_id)) {
+            inconsistencies.individuals.push({
+              id: id || _tempId,
+              erro: `ID do Domicílio inválido (não é um UUID): ${household_id}`,
+            });
+            continue;
+          }
+          if (
+            !existingHouseholdIdsForInds.has(household_id) &&
+            !savedData.households.some((h) => h.id === household_id)
+          ) {
+            inconsistencies.individuals.push({
+              id: id || _tempId,
+              erro: `Domicílio associado ao cidadão não encontrado: ${household_id}`,
+            });
+            continue;
+          }
+        }
+
+        // 4. Validar unicidade de CPF
+        const cleanCpf =
+          data.cpf && data.cpf.trim() !== '' ? data.cpf.trim() : null;
+        if (cleanCpf) {
+          const dup = await queryRunner.manager.findOne(Individual, {
+            where: { cpf: cleanCpf },
+            withDeleted: true,
+          });
+          if (dup && dup.id !== id) {
+            inconsistencies.individuals.push({
+              id: id || _tempId,
+              erro: `Conflito de CPF: O CPF ${cleanCpf} já está cadastrado no cidadão "${dup.nome_completo}" (${dup.id})`,
+            });
+            continue;
+          }
+        }
+
+        // 5. Validar unicidade de Cartão SUS
+        const cleanSus =
+          data.cartao_sus && data.cartao_sus.trim() !== ''
+            ? data.cartao_sus.trim()
+            : null;
+        if (cleanSus) {
+          const dup = await queryRunner.manager.findOne(Individual, {
+            where: { cartao_sus: cleanSus },
+            withDeleted: true,
+          });
+          if (dup && dup.id !== id) {
+            inconsistencies.individuals.push({
+              id: id || _tempId,
+              erro: `Conflito de Cartão SUS: O CNS ${cleanSus} já está cadastrado no cidadão "${dup.nome_completo}" (${dup.id})`,
+            });
+            continue;
+          }
+        }
+
         let iEnt = id
           ? await queryRunner.manager.findOne(Individual, {
               where: { id },
@@ -400,10 +593,118 @@ export class SyncService {
     inconsistencies: any,
     savedData: any,
   ) {
+    const householdIds = visits
+      .map((v) => v.household_id)
+      .filter((hid) => this.isValidUuid(hid));
+    const existingHouseholds =
+      householdIds.length > 0
+        ? await queryRunner.manager.find(Household, {
+            where: { id: In(householdIds) },
+            withDeleted: true,
+          })
+        : [];
+    const existingHouseholdIds = new Set(existingHouseholds.map((h) => h.id));
+
+    const familyIds = visits
+      .map((v) => v.family_id)
+      .filter((fid) => this.isValidUuid(fid));
+    const existingFamilies =
+      familyIds.length > 0
+        ? await queryRunner.manager.find(Family, {
+            where: { id: In(familyIds) },
+            withDeleted: true,
+          })
+        : [];
+    const existingFamilyIds = new Set(existingFamilies.map((f) => f.id));
+
+    const individualIds = visits
+      .map((v) => v.individual_id)
+      .filter((iid) => this.isValidUuid(iid));
+    const existingIndividuals =
+      individualIds.length > 0
+        ? await queryRunner.manager.find(Individual, {
+            where: { id: In(individualIds) },
+            withDeleted: true,
+          })
+        : [];
+    const existingIndividualIds = new Set(existingIndividuals.map((i) => i.id));
+
     for (const v of visits) {
       try {
         const { id, _tempId, household_id, family_id, individual_id, ...data } =
           v;
+
+        // 1. Validar UUID da visita
+        if (id && !this.isValidUuid(id)) {
+          inconsistencies.visits.push({
+            id: id || _tempId,
+            erro: `ID de visita inválido (não é um UUID): ${id}`,
+          });
+          continue;
+        }
+
+        // 2. Validar chave estrangeira (household_id)
+        if (household_id) {
+          if (!this.isValidUuid(household_id)) {
+            inconsistencies.visits.push({
+              id: id || _tempId,
+              erro: `ID do Domicílio inválido (não é um UUID): ${household_id}`,
+            });
+            continue;
+          }
+          if (
+            !existingHouseholdIds.has(household_id) &&
+            !savedData.households.some((h) => h.id === household_id)
+          ) {
+            inconsistencies.visits.push({
+              id: id || _tempId,
+              erro: `Domicílio associado à visita não encontrado: ${household_id}`,
+            });
+            continue;
+          }
+        }
+
+        // 3. Validar chave estrangeira (family_id)
+        if (family_id) {
+          if (!this.isValidUuid(family_id)) {
+            inconsistencies.visits.push({
+              id: id || _tempId,
+              erro: `ID da Família inválido (não é um UUID): ${family_id}`,
+            });
+            continue;
+          }
+          if (
+            !existingFamilyIds.has(family_id) &&
+            !savedData.families.some((f) => f.id === family_id)
+          ) {
+            inconsistencies.visits.push({
+              id: id || _tempId,
+              erro: `Família associada à visita não encontrada: ${family_id}`,
+            });
+            continue;
+          }
+        }
+
+        // 4. Validar chave estrangeira (individual_id)
+        if (individual_id) {
+          if (!this.isValidUuid(individual_id)) {
+            inconsistencies.visits.push({
+              id: id || _tempId,
+              erro: `ID do Cidadão inválido (não é um UUID): ${individual_id}`,
+            });
+            continue;
+          }
+          if (
+            !existingIndividualIds.has(individual_id) &&
+            !savedData.individuals.some((i) => i.id === individual_id)
+          ) {
+            inconsistencies.visits.push({
+              id: id || _tempId,
+              erro: `Cidadão associado à visita não encontrado: ${individual_id}`,
+            });
+            continue;
+          }
+        }
         let vEnt = id
           ? await queryRunner.manager.findOne(Visit, {
               where: { id },

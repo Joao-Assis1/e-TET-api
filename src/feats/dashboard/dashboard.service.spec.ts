@@ -59,13 +59,33 @@ describe('DashboardService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('getGeneralStats', () => {
-    it('should return counts for individuals, families and households', async () => {
-      const result = await service.getGeneralStats({});
+  describe('getDashboardStats', () => {
+    it('should return counts and stats for individuals, families and households', async () => {
+      const result = await service.getDashboardStats({});
       expect(result).toEqual({
-        individuals: 10,
-        families: 10,
-        households: 10,
+        totalCitizens: 10,
+        totalFamilies: 10,
+        activeHouseholds: 10,
+        visitEfficiency: 100,
+        riskDistribution: { R0: 0, R1: 0, R2: 0, R3: 0 },
+        healthConditions: {
+          hypertension: 0,
+          diabetes: 0,
+          pregnant: 0,
+          bedridden: 0,
+          mentalIllness: 0,
+          smoker: 0,
+          alcoholUser: 0,
+        },
+        vulnerabilityFactors: {
+          bedridden: 0,
+          illiterate: 0,
+          drugAddiction: 0,
+          unemployed: 0,
+          physicalDisability: 0,
+          mentalDisability: 0,
+          severeMalnutrition: 0,
+        },
       });
     });
   });

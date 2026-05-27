@@ -8,19 +8,28 @@ export class CreateRiskAssessmentDto {
   @Max(10)
   bedriddenCount: number;
 
-  @ApiProperty({ description: 'Número de pessoas com deficiência física', example: 0 })
+  @ApiProperty({
+    description: 'Número de pessoas com deficiência física',
+    example: 0,
+  })
   @IsInt()
   @Min(0)
   @Max(10)
   physicalDisabilityCount: number;
 
-  @ApiProperty({ description: 'Número de pessoas com deficiência mental', example: 0 })
+  @ApiProperty({
+    description: 'Número de pessoas com deficiência mental',
+    example: 0,
+  })
   @IsInt()
   @Min(0)
   @Max(10)
   mentalDisabilityCount: number;
 
-  @ApiProperty({ description: 'Número de pessoas com desnutrição grave', example: 0 })
+  @ApiProperty({
+    description: 'Número de pessoas com desnutrição grave',
+    example: 0,
+  })
   @IsInt()
   @Min(0)
   @Max(10)
@@ -50,7 +59,10 @@ export class CreateRiskAssessmentDto {
   @Max(5)
   under6MonthsCount: number;
 
-  @ApiProperty({ description: 'Número de pessoas com mais de 70 anos', example: 0 })
+  @ApiProperty({
+    description: 'Número de pessoas com mais de 70 anos',
+    example: 0,
+  })
   @IsInt()
   @Min(0)
   @Max(10)
@@ -68,7 +80,10 @@ export class CreateRiskAssessmentDto {
   @Max(5)
   diabetesCount: number;
 
-  @ApiProperty({ description: 'Possui saneamento básico adequado?', example: true })
+  @ApiProperty({
+    description: 'Possui saneamento básico adequado?',
+    example: true,
+  })
   @IsBoolean()
   basicSanitation: boolean;
 

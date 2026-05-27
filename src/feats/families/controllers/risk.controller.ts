@@ -9,7 +9,13 @@ import {
   Request,
   Get,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+} from '@nestjs/swagger';
 import { CreateRiskAssessmentDto } from '../dto/create-risk.dto';
 import { RiskCalculatorService } from '../services/risk-calculator.service';
 import { AuthGuard } from '../../users/guards/auth.guard';
@@ -23,15 +29,21 @@ export class RiskStratificationController {
   constructor(private readonly riskCalculatorService: RiskCalculatorService) {}
 
   @Get(':id/risk-history')
-  @ApiOperation({ summary: 'Consultar histórico de estratificação de risco de uma família' })
+  @ApiOperation({
+    summary: 'Consultar histórico de estratificação de risco de uma família',
+  })
   @ApiOkResponse({ description: 'Retorna o histórico de avaliações de risco' })
   async getRiskHistory(@Param('id', ParseUUIDPipe) familyId: string) {
     return this.riskCalculatorService.getRiskHistory(familyId);
   }
 
   @Post(':id/risk')
-  @ApiOperation({ summary: 'Calcular nova estratificação de risco (Coelho-Savassi)' })
-  @ApiCreatedResponse({ description: 'Retorna a nova classificação de risco calculada' })
+  @ApiOperation({
+    summary: 'Calcular nova estratificação de risco (Coelho-Savassi)',
+  })
+  @ApiCreatedResponse({
+    description: 'Retorna a nova classificação de risco calculada',
+  })
   async calculateRisk(
     @Param('id', ParseUUIDPipe) familyId: string,
     @Body() payload: CreateRiskAssessmentDto,

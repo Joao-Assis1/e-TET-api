@@ -1,5 +1,10 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import { DashboardFilterDto } from './dto/dashboard-filter.dto';
 import { AuthGuard } from '../users/guards/auth.guard';
@@ -12,7 +17,9 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('stats')
-  @ApiOperation({ summary: 'Métricas gerais de indivíduos, famílias e domicílios' })
+  @ApiOperation({
+    summary: 'Métricas gerais de indivíduos, famílias e domicílios',
+  })
   @ApiOkResponse({ description: 'Retorna estatísticas consolidadas' })
   async getGeneralStats(@Query() filters: DashboardFilterDto) {
     return this.dashboardService.getDashboardStats(filters);
@@ -27,21 +34,31 @@ export class DashboardController {
 
   @Get('priority-citizens')
   @ApiOperation({ summary: 'Cidadãos com condições de saúde prioritárias' })
-  @ApiOkResponse({ description: 'Retorna lista de cidadãos prioritários (máx 10)' })
+  @ApiOkResponse({
+    description: 'Retorna lista de cidadãos prioritários (máx 10)',
+  })
   async getPriorityCitizens(@Query() filters: DashboardFilterDto) {
     return this.dashboardService.getPriorityCitizens(filters);
   }
 
   @Get('risk-distribution')
-  @ApiOperation({ summary: 'Distribuição de famílias por classificação de risco' })
-  @ApiOkResponse({ description: 'Retorna contagem de famílias por nível de risco (R0-R3)' })
+  @ApiOperation({
+    summary: 'Distribuição de famílias por classificação de risco',
+  })
+  @ApiOkResponse({
+    description: 'Retorna contagem de famílias por nível de risco (R0-R3)',
+  })
   async getRiskDistribution(@Query() filters: DashboardFilterDto) {
     return this.dashboardService.getRiskDistribution(filters);
   }
 
   @Get('health-indicators')
-  @ApiOperation({ summary: 'Indicadores de saúde (hipertensão, diabetes, etc)' })
-  @ApiOkResponse({ description: 'Retorna contagem de condições de saúde específicas' })
+  @ApiOperation({
+    summary: 'Indicadores de saúde (hipertensão, diabetes, etc)',
+  })
+  @ApiOkResponse({
+    description: 'Retorna contagem de condições de saúde específicas',
+  })
   async getHealthIndicators(@Query() filters: DashboardFilterDto) {
     return this.dashboardService.getHealthIndicators(filters);
   }
@@ -54,8 +71,12 @@ export class DashboardController {
   }
 
   @Get('vulnerability-ranking')
-  @ApiOperation({ summary: 'Ranking de vulnerabilidade detalhado (Coelho-Savassi)' })
-  @ApiOkResponse({ description: 'Retorna ranking de fatores de vulnerabilidade ordenados' })
+  @ApiOperation({
+    summary: 'Ranking de vulnerabilidade detalhado (Coelho-Savassi)',
+  })
+  @ApiOkResponse({
+    description: 'Retorna ranking de fatores de vulnerabilidade ordenados',
+  })
   async getVulnerabilityRanking(@Query() filters: DashboardFilterDto) {
     return this.dashboardService.getVulnerabilityRanking(filters);
   }

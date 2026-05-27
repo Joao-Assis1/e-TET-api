@@ -44,6 +44,7 @@ describe('SyncService (Integration)', () => {
                   Object.assign(target, data),
                 ),
                 save: jest.fn((entity, data) => Promise.resolve(data)),
+                find: jest.fn(() => Promise.resolve([])),
               },
             }),
           },
