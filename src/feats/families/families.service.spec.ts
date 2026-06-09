@@ -62,18 +62,26 @@ describe('FamiliesService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should return all families', async () => {
+  it('should return paginated families', async () => {
     const family = { id: 'uuid-1', numero_prontuario: '001' };
     const families = [family];
-    mockFamilyRepository.find.mockResolvedValue(families);
+    mockFamilyRepository.findAndCount = jest.fn().mockResolvedValue([families, 1]);
     mockDataSource.manager.findOne.mockResolvedValue(null);
 
-    const result = await service.findAll();
+    const result = await service.findAll(undefined, 1, 10);
 
-    expect(result[0].id).toBe('uuid-1');
-    expect(result[0].sentinels).toBeDefined();
-    expect(mockFamilyRepository.find).toHaveBeenCalled();
+    expect(result.data[0].id).toBe('uuid-1');
+    expect(result.total).toBe(1);
+    expect(result.page).toBe(1);
+    expect(result.limit).toBe(10);
+    expect(mockFamilyRepository.findAndCount).toHaveBeenCalledWith({
+      where: {},
+      relations: ['household'],
+      skip: 0,
+      take: 10,
+    });
   });
+
 
   it('should return a family by id', async () => {
     const family = { id: 'uuid-1', numero_prontuario: '001' };

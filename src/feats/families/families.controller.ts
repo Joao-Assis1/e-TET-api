@@ -10,6 +10,7 @@ import {
   UseGuards,
   Patch,
   Req,
+  Query,
 } from '@nestjs/common';
 import { FamiliesService } from './families.service';
 import {
@@ -46,12 +47,18 @@ export class FamiliesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar todas as famílias' })
-  @ApiOkResponse({ type: [Family] })
-  async findAll(@Req() req: any) {
+  @ApiOperation({ summary: 'Listar todas as famílias com paginação' })
+  @ApiOkResponse({ description: 'Retorna uma lista paginada de famílias' })
+  async findAll(
+    @Req() req: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
     const user = req.user;
     const microareaFilter = user.role === 'Admin' ? undefined : user.microarea;
-    return this.familiesService.findAll(microareaFilter);
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 50;
+    return this.familiesService.findAll(microareaFilter, pageNum, limitNum);
   }
 
   @Get(':id')
