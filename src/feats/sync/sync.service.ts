@@ -350,6 +350,21 @@ export class SyncService {
               withDeleted: true,
             })
           : null;
+
+        // 4. Checar Concorrência (Offline-first Edge Case)
+        if (fEntity && f.updatedAt && fEntity.updated_at) {
+          const payloadDate = new Date(f.updatedAt);
+          const dbDate = new Date(fEntity.updated_at);
+          if (payloadDate < dbDate) {
+            inconsistencies.families.push({
+              id: id || _tempId,
+              erro: `Conflito de concorrência: A família foi alterada no servidor mais recentemente (${dbDate.toISOString()}). Atualize seu aplicativo antes de enviar novas edições.`,
+            });
+            failedIds.families.add(id || _tempId);
+            continue;
+          }
+        }
+
         const baseData: DeepPartial<Family> = {
           ...data,
           pontuacao_risco,

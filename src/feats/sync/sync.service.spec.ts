@@ -163,6 +163,42 @@ describe('SyncService', () => {
     );
   });
 
+  it('should reject family update if payload updatedAt is older than database updated_at', async () => {
+    const validUuid = '123e4567-e89b-12d3-a456-426614174000';
+    mockQueryRunner.manager.findOne.mockImplementation((entity, options) => {
+      if (entity.name === 'User') return Promise.resolve({ id: 1 });
+      if (options && options.where && options.where.id === validUuid) {
+        return Promise.resolve({
+          id: validUuid,
+          updated_at: new Date('2026-06-09T10:00:00Z'), // newer in DB
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    const payload = getBaseSyncPayload();
+    payload.families = [
+      {
+        id: validUuid,
+        numero_prontuario: '12345',
+        updatedAt: '2026-06-08T10:00:00Z', // older in payload
+      },
+    ];
+
+    const result = await service.processBatchSync(payload, 1);
+
+    expect(result.sucesso).toBe(true);
+    expect(result.inconsistencias.families).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: validUuid,
+          erro: expect.stringContaining('Conflito de concorrência'),
+        })
+      ])
+    );
+    expect(result.families.length).toBe(0); // Should not save
+  });
+
   it('should rollback and throw error on severe failure', async () => {
     mockQueryRunner.manager.findOne.mockRejectedValue(
       new Error('Critical DB error'),

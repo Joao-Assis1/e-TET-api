@@ -49,10 +49,13 @@ export class FamiliesService {
    * Retorna todas as famílias (não arquivadas por padrão).
    * Opcionalmente filtra por microárea via vínculo com Household.
    */
-  async findAll(microarea?: string): Promise<any[]> {
-    const families = await this.familyRepository.find({
+  async findAll(microarea?: string, page: number = 1, limit: number = 50): Promise<{ data: any[], total: number, page: number, limit: number }> {
+    const skip = (page - 1) * limit;
+    const [families, total] = await this.familyRepository.findAndCount({
       where: microarea ? { household: { microarea } } : {},
       relations: ['household'],
+      skip,
+      take: limit,
     });
 
     // Para cada família, buscar os dados de sentinelas mais recentes
@@ -90,7 +93,12 @@ export class FamiliesService {
       }),
     );
 
-    return enrichedFamilies;
+    return {
+      data: enrichedFamilies,
+      total,
+      page,
+      limit,
+    };
   }
 
   /**
