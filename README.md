@@ -1,106 +1,46 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# ⚙️ e-TET: Motor de Risco e Integração de Saúde (API)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A **e-TET API** é o coração da Rede Neural do Cuidado. Trata-se de uma aplicação backend robusta que quebra o isolamento de dados na Atenção Primária à Saúde, conectando os dados vitais recolhidos presencialmente no domicílio (via e-ACS) aos médicos que atuarão na clínica (via e-PET).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🧠 Inteligência e Cálculo de Risco Automático
+Sempre que um agente de saúde sincroniza as informações de uma nova visita domiciliar, a API atua como um motor de processamento, onde:
+1. Valida de forma estrita a estrutura e as referências de Domicílios, Famílias e Cidadãos.
+2. Calcula a pontuação em tempo real aplicando a **Metodologia de Risco Familiar de Coelho-Savassi** (atribuindo pesos matemáticos a condições como diabetes, gestação e infraestrutura sanitária).
+3. Assina os dados com a trilha de auditoria completa e segura baseada na sessão do profissional autenticado.
 
-## Description
+## 🛡️ Características Arquiteturais
+*   **RBAC Integrado (Perfis):** Sistema hierárquico seguro de acesso. Gestores têm privilégios completos, Médicos atuam como visualizadores focados na gestão clínica, e os ACS manipulam exclusivamente os dados restritos ao seu território demarcado (Microárea).
+*   **Offline-First Sync:** Suporta geração de UUIDs híbrida (Client-Driven). Possui lógicas robustas de validação temporal (`clientUpdatedAt`) para solucionar conflitos de sincronizações atrasadas em áreas rurais.
+*   **Persistence:** Arquitetura flexível com TypeORM capaz de rodar SQLite no desenvolvimento local e migrar para ambientes Serverless PostgreSQL (Neon DB) em produção.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🛠️ Tecnologias Principais
+*   **Framework:** NestJS
+*   **Linguagem:** TypeScript
+*   **ORM / Banco:** TypeORM + PostgreSQL / SQLite3
+*   **Segurança:** Implementação de Autenticação JWT Customizada, hashing bcrypt.
 
-## Project setup
+## 📦 Instalação e Execução
 
 ```bash
-$ npm install
+# 1. Instalar pacotes NPM
+npm install
+
+# 2. Configurar as credenciais e ambiente
+cp .env.example .env
+
+# 3. Levantar o backend (Live Reload - Dev)
+npm run start:dev
+
+# 4. Executar os Testes Unitários/E2E
+npm run test
 ```
 
-## Compile and run the project
+## 📚 Documentação do Projeto
 
-```bash
-# development
-$ npm run start
+Para mergulhar mais profundamente nas regras de negócio e modelagens complexas do domínio e-TET, navegue pelos documentos da pasta `docs/`:
 
-# watch mode
-$ npm run start:dev
+- [Especificações Técnicas, Arquitetura e Regras de Negócio (Spec)](docs/spec.md)
+- [Metodologia Clínica e Acadêmica do Projeto](docs/METODOLOGIA.md)
+- [Roadmap de Funcionalidades Futuras](docs/ROADMAP.md)
 
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
-
-## Documentação do Projeto (e-TET)
-
-- [Especificações Técnicas e Arquitetura (Spec)](docs/spec.md)
-- [Metodologia do Projeto](docs/METODOLOGIA.md)
-- [Roadmap de Evolução](docs/ROADMAP.md)
-
-> **Nota para IA:** As diretrizes e contexto para agentes (Antigravity/Gemini) estão nos arquivos `AGENTS.md` e `GEMINI.md` presentes na raiz deste repositório.
+> **Aviso à IA:** Todas as diretrizes arquiteturais e estritas de desenvolvimento deste projeto encontram-se nos arquivos globais de conhecimento [AGENTS.md](AGENTS.md) e [GEMINI.md](GEMINI.md). É obrigatória a leitura do AGENTS.md antes da criação de novos *Endpoints* ou *Services*.
