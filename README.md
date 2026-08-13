@@ -96,3 +96,11 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Documentação do Projeto (e-TET)
+
+- [Especificações Técnicas e Arquitetura (Spec)](docs/spec.md)
+- [Metodologia do Projeto](docs/METODOLOGIA.md)
+- [Roadmap de Evolução](docs/ROADMAP.md)
+
+> **Nota para IA:** As diretrizes e contexto para agentes (Antigravity/Gemini) estão nos arquivos `AGENTS.md` e `GEMINI.md` presentes na raiz deste repositório.
