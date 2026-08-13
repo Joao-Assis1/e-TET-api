@@ -1,3 +1,5 @@
+> ⚠️ **Novo Desenvolvedor?** [Leia o Guia de Handover (Transferência) aqui antes de começar!](docs/HANDOVER.md)
+
 # ⚙️ e-TET: Motor de Risco e Integração de Saúde (API)
 
 A **e-TET API** é o coração da Rede Neural do Cuidado. Trata-se de uma aplicação backend robusta que quebra o isolamento de dados na Atenção Primária à Saúde, conectando os dados vitais recolhidos presencialmente no domicílio (via e-ACS) aos médicos que atuarão na clínica (via e-PET).
